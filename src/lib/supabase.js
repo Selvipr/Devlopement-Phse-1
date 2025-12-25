@@ -1,50 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Force Mock Client for verification
-const createMockClient = () => {
-    console.log("Supabase (Mock): Creating mock client");
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    const mockSession = {
-        user: { id: 'mock-user-id', email: 'admin@quantix.com', role: 'authenticated' },
-        access_token: 'mock-token'
+let client;
+
+if (supabaseUrl && supabaseAnonKey) {
+    console.log("Supabase Client: Initializing with real keys");
+    client = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+    console.warn("⚠️ Supabase keys missing! Using mock client. Real authentication will NOT work.");
+    // Mock implementation for UI stability when keys are missing
+    const createMockClient = () => {
+        const mockSession = { user: { id: 'mock-id', email: 'test@example.com' }, access_token: 'mock-token' };
+        return {
+            auth: {
+                getSession: async () => ({ data: { session: null }, error: null }),
+                onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
+                signInWithPassword: async () => ({ data: { user: mockSession.user, session: mockSession }, error: null }),
+                signUp: async () => ({ data: { user: mockSession.user, session: mockSession }, error: null }),
+                signOut: async () => ({ error: null }),
+            },
+            from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: {}, error: null }) }) }) })
+        };
     };
+    client = createMockClient();
+}
 
-    return {
-        auth: {
-            getSession: async () => {
-                console.log("Supabase (Mock): getSession called");
-                return { data: { session: null }, error: null };
-            },
-            onAuthStateChange: (callback) => {
-                console.log("Supabase (Mock): onAuthStateChange called");
-                // Immediately trigger the callback with current state (null session)
-                // setTimeout(() => callback('INITIAL_SESSION', { session: null }), 0); 
-                return { data: { subscription: { unsubscribe: () => console.log("Supabase (Mock): unsubscribed") } } };
-            },
-            signInWithPassword: async ({ email, password }) => {
-                console.log("Supabase (Mock): signInWithPassword", email);
-                if (email === "admin@quantix.com") {
-                    return { data: { user: mockSession.user, session: mockSession }, error: null };
-                }
-                return { data: { user: null, session: null }, error: { message: "Invalid credentials (Mock)" } };
-            },
-            signUp: async ({ email, password }) => {
-                return { data: { user: { id: 'new-user', email }, session: null }, error: null };
-            },
-            signOut: async () => {
-                console.log("Supabase (Mock): signOut");
-                return { error: null };
-            },
-        },
-        from: (table) => ({
-            select: (columns) => ({
-                eq: (col, val) => ({
-                    single: async () => ({ data: { full_name: 'Admin User', avatar_url: null }, error: null }),
-                }),
-                order: () => ({ data: [], error: null })
-            }),
-        }),
-    };
-};
-
-export const supabase = createMockClient();
+export const supabase = client;
