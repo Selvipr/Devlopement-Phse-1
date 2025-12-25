@@ -1,0 +1,124 @@
+Product  Requirements  Document  (PRD):  
+Quantix
+ 
+Digital
+ 
+Marketplace
+ 
+Project  Name:  S2017  Digital  Market  
+Company:  Quantix  Labs  
+Lead:  PradeepKumar  (DCSE).  Carrier  Enrollment(Google)  
+Reference  Model:  Jubaly.com 
+Document  Version:  1.0  
+1.  Executive  Summary  
+The  goal  of  this  project  is  to  develop  a  high-performance,  secure,  and  mobile-responsive  web  
+platform
+ 
+for
+ 
+the
+ 
+sale
+ 
+of
+ 
+digital
+ 
+game
+ 
+top-ups
+ 
+(e.g.,
+ 
+Free
+ 
+Fire
+ 
+Diamonds,
+ 
+PUBG
+ 
+UC),
+ 
+gift
+ 
+cards,
+ 
+and
+ 
+software
+ 
+licenses.
+ 
+The
+ 
+platform
+ 
+will
+ 
+mirror
+ 
+the
+ 
+user
+ 
+experience
+ 
+and
+ 
+service
+ 
+flow
+ 
+of
+ 
+Jubaly.com
+ 
+while
+ 
+maintaining
+ 
+a
+ 
+unique
+ 
+identity
+ 
+for
+ 
+the
+ 
+new
+ 
+client.
+ 
+2.  Target  Audience  
+●  Gamers:  Looking  for  fast,  reliable  in-game  currency  top-ups.  ●  Digital  Consumers:  Users  purchasing  gift  cards  (iTunes,  Google  Play,  Steam).  ●  Admins:  Quantix/Client  staff  managing  inventory  and  orders.  
+3.  Functional  Requirements  3.1  User-End  Features  
+●  Landing  Page:  High-impact  hero  section  with  featured  games  and  categories.  ●  Product  Catalog:  *  Categorization  by  Game,  Region,  and  Type  (Top-up  vs.  Gift  Card).  ○  Dynamic  search  and  filtering.  ●  Top-up  Logic  (Variable  Input):  ○  Input  fields  for  Player  ID  and  Server  ID  are  based  on  the  specific  game  
+requirements.
+ ○  Selection  of  denomination  packages  (e.g.,  100  Diamonds,  500  Diamonds).  ●  Cart  &  Checkout:  ○  Guest  checkout  and  registered  user  checkout.  ○  Real-time  price  calculation,  including  any  processing  fees.  ●  User  Dashboard:  ○  Order  History  (Processing,  Completed,  Cancelled).  ○  Profile  management  (Email/Password).  
+○  Wallet  system  (Optional,  for  stored  balance).  
+3.2  Administrative  Features  (Admin  Panel)  
+●  Dashboard:  Overview  of  daily  sales,  pending  orders,  and  user  growth.  ●  Inventory  Management:  *  Ability  to  add/edit  games  and  digital  products.  ○  Managing  region-specific  pricing  and  stock  levels.  ●  Order  Fulfillment:  *  Manual  and  Automated  processing  of  game  top-ups.  ○  Email  notification  trigger  upon  completion.  ●  Payment  Tracking:  Log  of  all  transactions  with  reference  IDs.  
+4.  Technical  Requirements  4.1  Technology  Stack  (Recommended)  
+●  Frontend:  React.js  with  Tailwind  CSS  (for  responsiveness).  ●  Backend:  Node.js  with  Express  or  Python/Django.  ●  Database:  PostgreSQL  (Relational  data  for  orders  and  products).  ●  Infrastructure:  AWS  or  DigitalOcean  with  CI/CD  via  GitHub  Actions  (Managed  by  Karthik  
+Rajlee).
+ 
+4.2  Payment  Gateway  Integration  
+●  Integration  of  multiple  local  and  international  gateways:  ○  Primary:  SSLCommerz  or  Bkash  (similar  to  Jubaly).  ○  Secondary:  Stripe  for  international  credit  cards.  ●  Webhook  implementation  for  real-time  payment  confirmation.  
+4.3  Security  
+●  SSL  Encryption  (HTTPS).  ●  JWT  (JSON  Web  Tokens)  for  secure  authentication.  ●  Protection  against  SQL  Injection  and  XSS.  
+5.  User  Journey  Map  
+1.  Entry:  User  lands  on  homepage,  searches  for  "Free  Fire".  2.  Selection:  User  selects  a  Diamond  package  and  enters  their  "Player  ID".  3.  Checkout:  User  proceeds  to  payment,  chooses  "UPI  and  Other  Modes  of  Payment".  4.  Verification:  User  completes  payment  on  the  gateway;  the  site  receives  a  success  
+webhook.
+ 5.  Fulfillment:  Order  status  moves  to  "Processing";  Admin  delivers,  or  the  system  
+automates
+ 
+delivery.
+ 6.  Completion:  User  receives  email/SMS  confirmation.  
+ 
+6.  Success  Metrics  (KPIs)  
+●  Load  Time:  Home  page  loading  in  under  2  seconds.  ●  Conversion  Rate:  Percentage  of  visitors  who  complete  a  purchase.  ●  Mobile  Usability:  100%  functionality  across  iOS  and  Android  browsers.  ●  Order  Accuracy:  Zero  errors  in  Player  ID  processing  during  automated  delivery.  
+7.  Project  Schedule  (Summary)  
+●  Phase  1  (Week  1):  Design,  DB  Architecture,  and  Core  UI.  ●  Phase  2  (Week  2):  Payment  Integration,  Logic,  Testing,  and  Deployment.  Approval  Sign-off:  PradeepKumar  (Overall  Head)  Quantix  Labs  
