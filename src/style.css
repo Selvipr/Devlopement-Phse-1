@@ -1,1 +1,8 @@
-/* Global styles - minimal, most styles in App.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional custom styles if needed, but prefer config */
+body {
+  @apply bg-primary text-white font-sans antialiased;
+}

@@ -5,8 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { FaShoppingCart, FaUser, FaHome, FaGamepad, FaClipboardList, FaCog, FaSignOutAlt, FaChevronDown, FaSun, FaMoon, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
-import './Navbar.css';
+import { FaShoppingCart, FaUser, FaHome, FaGamepad, FaClipboardList, FaSignOutAlt, FaChevronDown, FaSun, FaMoon, FaSignInAlt, FaUserPlus, FaBars, FaTimes } from 'react-icons/fa';
 
 export default function Navbar() {
   const { getItemCount } = useCart();
@@ -16,7 +15,6 @@ export default function Navbar() {
     currency,
     currencies,
     t,
-    formatPrice,
     changeLanguage,
     changeCurrency
   } = useLanguage();
@@ -29,6 +27,7 @@ export default function Navbar() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Refs for handling click outside
   const profileMenuRef = useRef(null);
@@ -53,218 +52,271 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
   return (
-    <nav className="navbar">
-      <div className="nav-container">
-        {/* Logo */}
-        <Link to="/" className="nav-logo">
-          <FaGamepad className="logo-icon" />
-          <span className="logo-text">GameStore</span>
-        </Link>
+    <nav className="sticky top-0 z-50 w-full bg-primary/95 backdrop-blur-sm border-b border-white/10 shadow-lg text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
 
-        {/* Navigation Links */}
-        <div className="nav-links">
-          <Link to="/" className="nav-link">
-            <FaHome className="nav-icon" />
-            <span className="nav-text">{t('home')}</span>
-          </Link>
-
-          <Link to="/products" className="nav-link">
-            <FaGamepad className="nav-icon" />
-            <span className="nav-text">{t('products')}</span>
-          </Link>
-
-          <Link to="/orders" className="nav-link">
-            <FaClipboardList className="nav-icon" />
-            <span className="nav-text">{t('orders')}</span>
-          </Link>
-        </div>
-
-        {/* Right Side Actions */}
-        <div className="nav-right">
-          {/* Theme Toggle */}
-          <button
-            className="theme-toggle-btn"
-            onClick={toggleTheme}
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {isDark ? <FaSun /> : <FaMoon />}
-          </button>
-
-          {/* Language Selector */}
-          <div className="nav-selector" ref={languageMenuRef}>
-            <button
-              className="selector-btn"
-              onClick={() => {
-                setShowLanguageMenu(!showLanguageMenu);
-                setShowCurrencyMenu(false);
-                setShowProfileMenu(false);
-              }}
-              title={t('selectLanguage')}
-            >
-              <span className="selector-icon">
-                {languages.find(l => l.code === language)?.flag || '🌐'}
-              </span>
-              <span className="selector-text">
-                {languages.find(l => l.code === language)?.code.toUpperCase() || 'EN'}
-              </span>
-              <FaChevronDown className={`chevron ${showLanguageMenu ? 'rotate' : ''}`} />
-            </button>
-
-            {showLanguageMenu && (
-              <div className="dropdown-menu">
-                {languages.map(lang => (
-                  <button
-                    key={lang.code}
-                    className={`dropdown-item ${language === lang.code ? 'active' : ''}`}
-                    onClick={() => {
-                      changeLanguage(lang.code);
-                      setShowLanguageMenu(false);
-                    }}
-                  >
-                    <span className="dropdown-icon">{lang.flag}</span>
-                    <span className="dropdown-text">{lang.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Currency Selector */}
-          <div className="nav-selector" ref={currencyMenuRef}>
-            <button
-              className="selector-btn"
-              onClick={() => {
-                setShowCurrencyMenu(!showCurrencyMenu);
-                setShowLanguageMenu(false);
-                setShowProfileMenu(false);
-              }}
-              title={t('selectCurrency')}
-            >
-              <span className="selector-icon">
-                {currencies.find(c => c.code === currency)?.symbol || '$'}
-              </span>
-              <span className="selector-text">
-                {currency || 'USD'}
-              </span>
-              <FaChevronDown className={`chevron ${showCurrencyMenu ? 'rotate' : ''}`} />
-            </button>
-
-            {showCurrencyMenu && (
-              <div className="dropdown-menu">
-                {currencies.map(curr => (
-                  <button
-                    key={curr.code}
-                    className={`dropdown-item ${currency === curr.code ? 'active' : ''}`}
-                    onClick={() => {
-                      changeCurrency(curr.code);
-                      setShowCurrencyMenu(false);
-                    }}
-                  >
-                    <span className="dropdown-icon">{curr.symbol}</span>
-                    <span className="dropdown-text">{curr.code} - {curr.name}</span>
-                    <span className="dropdown-rate">Rate: {curr.rate}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Cart Link */}
-          <Link to="/cart" className="cart-link">
-            <div className="cart-icon-container">
-              <FaShoppingCart className="cart-icon" />
-              {getItemCount() > 0 && (
-                <span className="cart-badge">{getItemCount()}</span>
-              )}
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 group" onClick={closeMobileMenu}>
+            <div className="p-2 bg-accent rounded-lg group-hover:bg-accent-hover transition-colors">
+              <FaGamepad className="text-xl text-white" />
             </div>
-            <span className="cart-text">{t('cart')}</span>
+            <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              Quantix
+            </span>
           </Link>
 
-          {/* Profile Dropdown or Login/Register */}
-          {user ? (
-            <div className="profile-container" ref={profileMenuRef}>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link to="/" className="flex items-center space-x-2 text-gray-300 hover:text-accent transition-colors">
+              <FaHome />
+              <span>{t('home')}</span>
+            </Link>
+            <Link to="/products" className="flex items-center space-x-2 text-gray-300 hover:text-accent transition-colors">
+              <FaGamepad />
+              <span>{t('products')}</span>
+            </Link>
+            <Link to="/orders" className="flex items-center space-x-2 text-gray-300 hover:text-accent transition-colors">
+              <FaClipboardList />
+              <span>{t('orders')}</span>
+            </Link>
+          </div>
+
+          {/* Right Side Actions */}
+          <div className="hidden md:flex items-center space-x-4">
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-gray-400 hover:text-accent transition-colors"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? <FaSun /> : <FaMoon />}
+            </button>
+
+            {/* Language Selector */}
+            <div className="relative" ref={languageMenuRef}>
               <button
-                className="profile-btn"
+                className="flex items-center space-x-1 p-2 text-gray-300 hover:text-white transition-colors"
                 onClick={() => {
-                  setShowProfileMenu(!showProfileMenu);
-                  setShowLanguageMenu(false);
+                  setShowLanguageMenu(!showLanguageMenu);
                   setShowCurrencyMenu(false);
+                  setShowProfileMenu(false);
                 }}
               >
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Avatar" className="profile-avatar-img" />
-                ) : (
-                  <FaUser className="profile-icon" />
-                )}
+                <span>{languages.find(l => l.code === language)?.flag || '🌐'}</span>
+                <span className="uppercase text-sm font-medium">{language || 'EN'}</span>
+                <FaChevronDown className={`text-xs transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} />
               </button>
 
-              {showProfileMenu && (
-                <div className="dropdown-menu profile-dropdown">
-                  <div className="dropdown-header">
-                    <div className="user-info">
-                      <div className="user-avatar">
-                        {profile?.avatar_url ? (
-                          <img src={profile.avatar_url} alt="Avatar" />
-                        ) : (
-                          <FaUser />
-                        )}
-                      </div>
-                      <div className="user-details">
-                        <div className="user-name">{profile?.full_name || user.email.split('@')[0]}</div>
-                        <div className="user-email">{user.email}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="dropdown-divider"></div>
-
-                  <Link
-                    to="/profile"
-                    className="dropdown-item"
-                    onClick={() => setShowProfileMenu(false)}
-                  >
-                    <FaUser className="dropdown-item-icon" />
-                    <span>{t('myProfile')}</span>
-                  </Link>
-
-                  <Link
-                    to="/orders"
-                    className="dropdown-item"
-                    onClick={() => setShowProfileMenu(false)}
-                  >
-                    <FaClipboardList className="dropdown-item-icon" />
-                    <span>{t('myOrders')}</span>
-                  </Link>
-
-                  <div className="dropdown-divider"></div>
-
-                  <button
-                    className="dropdown-item logout-btn"
-                    onClick={() => {
-                      signOut();
-                      setShowProfileMenu(false);
-                      navigate('/login');
-                    }}
-                  >
-                    <FaSignOutAlt className="dropdown-item-icon" />
-                    <span>{t('logout')}</span>
-                  </button>
+              {showLanguageMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-surface border border-white/10 rounded-md shadow-xl py-1 z-50">
+                  {languages.map(lang => (
+                    <button
+                      key={lang.code}
+                      className={`flex items-center w-full px-4 py-2 text-sm text-left hover:bg-white/5 transition-colors ${language === lang.code ? 'text-accent' : 'text-gray-300'}`}
+                      onClick={() => {
+                        changeLanguage(lang.code);
+                        setShowLanguageMenu(false);
+                      }}
+                    >
+                      <span className="mr-2">{lang.flag}</span>
+                      {lang.name}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-          ) : (
-            <div className="auth-buttons">
-              <Link to="/login" className="nav-btn login-btn">
-                <FaSignInAlt /> {t('login') || 'Login'}
-              </Link>
-              <Link to="/register" className="nav-btn register-btn">
-                <FaUserPlus /> {t('register') || 'Register'}
-              </Link>
+
+            {/* Currency Selector */}
+            <div className="relative" ref={currencyMenuRef}>
+              <button
+                className="flex items-center space-x-1 p-2 text-gray-300 hover:text-white transition-colors"
+                onClick={() => {
+                  setShowCurrencyMenu(!showCurrencyMenu);
+                  setShowLanguageMenu(false);
+                  setShowProfileMenu(false);
+                }}
+              >
+                <span className="text-accent font-medium">{currencies.find(c => c.code === currency)?.symbol || '$'}</span>
+                <span className="text-sm font-medium">{currency || 'USD'}</span>
+                <FaChevronDown className={`text-xs transition-transform ${showCurrencyMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showCurrencyMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-surface border border-white/10 rounded-md shadow-xl py-1 z-50">
+                  {currencies.map(curr => (
+                    <button
+                      key={curr.code}
+                      className={`flex items-center justify-between w-full px-4 py-2 text-sm text-left hover:bg-white/5 transition-colors ${currency === curr.code ? 'text-accent' : 'text-gray-300'}`}
+                      onClick={() => {
+                        changeCurrency(curr.code);
+                        setShowCurrencyMenu(false);
+                      }}
+                    >
+                      <div>
+                        <span className="mr-2 font-bold">{curr.symbol}</span>
+                        <span>{curr.code}</span>
+                      </div>
+                      <span className="text-xs text-gray-500">{curr.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Cart Link */}
+            <Link to="/cart" className="relative p-2 text-gray-300 hover:text-accent transition-colors group">
+              <FaShoppingCart className="text-lg" />
+              {getItemCount() > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-primary">
+                  {getItemCount()}
+                </span>
+              )}
+            </Link>
+
+            {/* Profile / Auth */}
+            {user ? (
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  className="flex items-center focus:outline-none"
+                  onClick={() => {
+                    setShowProfileMenu(!showProfileMenu);
+                    setShowLanguageMenu(false);
+                    setShowCurrencyMenu(false);
+                  }}
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-accent to-yellow-300 p-[2px]">
+                    <div className="w-full h-full rounded-full bg-surface overflow-hidden flex items-center justify-center">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <FaUser className="text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                </button>
+
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-3 w-56 bg-surface border border-white/10 rounded-xl shadow-2xl py-2 z-50">
+                    <div className="px-4 py-3 border-b border-white/10">
+                      <p className="text-sm font-medium text-white">{profile?.full_name || 'User'}</p>
+                      <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                    </div>
+
+                    <div className="py-1">
+                      <Link to="/profile" className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-accent" onClick={() => setShowProfileMenu(false)}>
+                        <FaUser className="mr-3 text-gray-400" /> {t('myProfile')}
+                      </Link>
+                      <Link to="/orders" className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-accent" onClick={() => setShowProfileMenu(false)}>
+                        <FaClipboardList className="mr-3 text-gray-400" /> {t('myOrders')}
+                      </Link>
+                    </div>
+
+                    <div className="border-t border-white/10 pt-1">
+                      <button
+                        className="flex w-full items-center px-4 py-2 text-sm text-red-400 hover:bg-white/5 hover:text-red-300"
+                        onClick={() => {
+                          signOut();
+                          setShowProfileMenu(false);
+                          navigate('/login');
+                        }}
+                      >
+                        <FaSignOutAlt className="mr-3" /> {t('logout')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <Link to="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                  {t('login') || 'Login'}
+                </Link>
+                <Link to="/register" className="px-4 py-2 text-sm font-bold text-primary bg-accent rounded-lg hover:bg-accent-hover transition-colors shadow-lg shadow-accent/20">
+                  {t('register') || 'Sign Up'}
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center space-x-4">
+            <Link to="/cart" className="relative p-2 text-gray-300 hover:text-accent transition-colors">
+              <FaShoppingCart className="text-lg" />
+              {getItemCount() > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-primary">
+                  {getItemCount()}
+                </span>
+              )}
+            </Link>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-gray-300 hover:text-white transition-colors"
+            >
+              {isMobileMenuOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-surface border-t border-white/10">
+          <div className="px-4 py-2 space-y-1">
+            <Link to="/" onClick={closeMobileMenu} className="block px-3 py-3 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/5">
+              <div className="flex items-center space-x-3">
+                <FaHome /> <span>{t('home')}</span>
+              </div>
+            </Link>
+            <Link to="/products" onClick={closeMobileMenu} className="block px-3 py-3 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/5">
+              <div className="flex items-center space-x-3">
+                <FaGamepad /> <span>{t('products')}</span>
+              </div>
+            </Link>
+            <Link to="/orders" onClick={closeMobileMenu} className="block px-3 py-3 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/5">
+              <div className="flex items-center space-x-3">
+                <FaClipboardList /> <span>{t('orders')}</span>
+              </div>
+            </Link>
+          </div>
+
+          <div className="border-t border-white/10 px-4 py-4 space-y-4">
+            {!user ? (
+              <div className="grid grid-cols-2 gap-4">
+                <Link to="/login" onClick={closeMobileMenu} className="flex items-center justify-center px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5">
+                  {t('login') || 'Login'}
+                </Link>
+                <Link to="/register" onClick={closeMobileMenu} className="flex items-center justify-center px-4 py-2 rounded-lg bg-accent text-primary font-bold hover:bg-accent-hover">
+                  {t('register') || 'Sign Up'}
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3 px-3">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Profile" className="w-10 h-10 rounded-full" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                      <FaUser className="text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-white font-medium">{profile?.full_name || 'User'}</div>
+                    <div className="text-sm text-gray-400">{user.email}</div>
+                  </div>
+                </div>
+                <button onClick={() => { signOut(); closeMobileMenu(); }} className="w-full flex items-center px-3 py-2 text-red-400 hover:bg-white/5 rounded-md">
+                  <FaSignOutAlt className="mr-3" /> {t('logout')}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

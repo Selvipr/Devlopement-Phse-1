@@ -12,14 +12,25 @@ export const AuthProvider = ({ children }) => {
     const [profile, setProfile] = useState(null);
 
     useEffect(() => {
+        console.log("AuthContext: Provider mounted");
         // Check active sessions and sets the user
         const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user.id);
-            } else {
+            console.log("AuthContext: calling getSession");
+            try {
+                const { data } = await supabase.auth.getSession();
+                console.log("AuthContext: getSession result", data);
+                const session = data?.session;
+                setSession(session);
+                setUser(session?.user ?? null);
+                if (session?.user) {
+                    console.log("AuthContext: fetching profile");
+                    fetchProfile(session.user.id);
+                } else {
+                    console.log("AuthContext: no session, setting loading false");
+                    setLoading(false);
+                }
+            } catch (err) {
+                console.error("AuthContext: getSession error", err);
                 setLoading(false);
             }
         };
@@ -28,6 +39,7 @@ export const AuthProvider = ({ children }) => {
 
         // Listen for changes on auth state (logged in, signed out, etc.)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            console.log("AuthContext: onAuthStateChange", _event, session);
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {

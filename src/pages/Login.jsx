@@ -1,6 +1,8 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { FaGamepad, FaEnvelope, FaLock } from 'react-icons/fa';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,128 +32,108 @@ export default function Login() {
   };
 
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "100vh",
-        background: "#eef1f7",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "25px",
-      }}
-    >
-      <div
-        style={{
-          width: "380px",
-          background: "#fff",
-          padding: "30px 35px",
-          borderRadius: "12px",
-          boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
-        }}
-      >
-        <h2
-          style={{
-            textAlign: "center",
-            marginBottom: "10px",
-            color: "#222",
-            fontWeight: "600",
-          }}
-        >
-          Login
-        </h2>
+    <div className="min-h-screen flex items-center justify-center bg-primary py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      </div>
 
-        <p
-          style={{
-            textAlign: "center",
-            color: "#666",
-            marginBottom: "22px",
-            fontSize: "14px",
-          }}
-        >
-          Enter your credentials to continue
-        </p>
+      <div className="max-w-md w-full space-y-8 relative z-10 bg-surface/50 backdrop-blur-md p-8 rounded-2xl border border-white/5 shadow-2xl">
+        <div className="text-center">
+          <div className="mx-auto h-16 w-16 bg-accent rounded-full flex items-center justify-center text-primary text-3xl mb-4 shadow-lg shadow-accent/20">
+            <FaGamepad />
+          </div>
+          <h2 className="text-3xl font-extrabold text-white">Welcome Back</h2>
+          <p className="mt-2 text-sm text-gray-400">
+            Sign in to access your gaming top-ups
+          </p>
+        </div>
 
         {error && (
-          <div style={{
-            background: "#ffebee",
-            color: "#c62828",
-            padding: "10px",
-            borderRadius: "6px",
-            marginBottom: "15px",
-            fontSize: "14px",
-            textAlign: "center"
-          }}>
+          <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg text-sm text-center">
             {error}
           </div>
         )}
 
-        <form onSubmit={submitForm}>
-          {/* Email */}
-          <div style={{ marginBottom: "18px", display: "flex", flexDirection: "column" }}>
-            <label style={{ marginBottom: "6px", color: "#333", fontSize: "15px", fontWeight: "500" }}>
-              Email
-            </label>
-            <input
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              onChange={updateForm}
-              required
-              style={{
-                padding: "11px 12px",
-                fontSize: "15px",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                outline: "none",
-              }}
-            />
+        <form className="mt-8 space-y-6" onSubmit={submitForm}>
+          <div className="rounded-md shadow-sm space-y-4">
+            <div>
+              <label htmlFor="email_address" className="sr-only">Email address</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaEnvelope className="text-gray-400" />
+                </div>
+                <input
+                  id="email_address"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="appearance-none relative block w-full px-3 py-3 pl-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
+                  placeholder="Email address"
+                  onChange={updateForm}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="password" className="sr-only">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaLock className="text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none relative block w-full px-3 py-3 pl-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
+                  placeholder="Password"
+                  onChange={updateForm}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Password */}
-          <div style={{ marginBottom: "18px", display: "flex", flexDirection: "column" }}>
-            <label style={{ marginBottom: "6px", color: "#333", fontSize: "15px", fontWeight: "500" }}>
-              Password
-            </label>
-            <input
-              name="password"
-              type="password"
-              placeholder="Enter your password"
-              onChange={updateForm}
-              required
-              style={{
-                padding: "11px 12px",
-                fontSize: "15px",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                outline: "none",
-              }}
-            />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                className="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded"
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
+                Remember me
+              </label>
+            </div>
+
+            <div className="text-sm">
+              <a href="#" className="font-medium text-accent hover:text-accent-hover transition-colors">
+                Forgot password?
+              </a>
+            </div>
           </div>
 
-          {/* Login Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "12px",
-              background: loading ? "#a0b4f0" : "#4e73df",
-              border: "none",
-              borderRadius: "8px",
-              color: "#fff",
-              fontSize: "16px",
-              cursor: loading ? "not-allowed" : "pointer",
-              marginTop: "10px",
-              fontWeight: "600",
-            }}
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-primary bg-accent hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200 shadow-lg shadow-accent/20 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+          </div>
         </form>
 
-        <div style={{ marginTop: "20px", textAlign: "center", fontSize: "14px", color: "#666" }}>
-          Don't have an account? <Link to="/register" style={{ color: "#4e73df", textDecoration: "none", fontWeight: "600" }}>Register here</Link>
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-400">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-medium text-accent hover:text-accent-hover transition-colors">
+              Sign up for free
+            </Link>
+          </p>
         </div>
       </div>
     </div>

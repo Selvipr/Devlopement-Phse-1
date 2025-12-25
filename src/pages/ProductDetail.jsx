@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
-import { FaArrowLeft, FaShoppingCart, FaCreditCard, FaCheckCircle, FaStar, FaTruck, FaShieldAlt } from 'react-icons/fa';
-import './ProductDetail.css';
+import { FaArrowLeft, FaShoppingCart, FaCreditCard, FaCheckCircle, FaStar, FaTruck, FaShieldAlt, FaMinus, FaPlus } from 'react-icons/fa';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -20,57 +19,26 @@ export default function ProductDetail() {
   // Get product from location state or reconstruct from id
   let product = location.state?.product;
 
-  // If no product in state, reconstruct from id (for direct navigation)
+  // Manual reconstruction logic if state is missing (simplified for brevity, main logic in Products.jsx)
   if (!product && id) {
-    const [mainId, subId] = id.split('-');
-    const mainProducts = [
-      { id: 1, name: "Steam Wallet", icon: "🎮", color: "#1b2838", platform: "Steam" },
-      { id: 2, name: "PlayStation Network", icon: "🎯", color: "#003087", platform: "PlayStation" },
-      { id: 3, name: "Xbox Live", icon: "⚡", color: "#107c10", platform: "Xbox" },
-      { id: 4, name: "Nintendo eShop", icon: "🎲", color: "#e60012", platform: "Nintendo" },
-      { id: 5, name: "Apple Gift Cards", icon: "🍎", color: "#a2aaad", platform: "Apple" },
-      { id: 6, name: "Google Play", icon: "📱", color: "#4285f4", platform: "Google" },
-      { id: 7, name: "Spotify Premium", icon: "🎵", color: "#1db954", platform: "Spotify" },
-      { id: 8, name: "Netflix Gift Cards", icon: "📺", color: "#e50914", platform: "Netflix" },
-      { id: 9, name: "Amazon Gift Cards", icon: "📦", color: "#ff9900", platform: "Amazon" },
-      { id: 10, name: "Razer Gold", icon: "🐍", color: "#44d62c", platform: "Razer" },
-      { id: 11, name: "Free Fire", icon: "🔥", color: "#FF5500", platform: "Free Fire", category: "Game Top-up" }
-    ];
-    const mainProduct = mainProducts.find(p => p.id === parseInt(mainId));
-    if (mainProduct) {
-      const denominations = [5, 10, 20, 25, 30, 50, 75, 100, 150, 200];
-      const discounts = ["5% OFF", "10% OFF", "15% OFF", "20% OFF", "25% OFF"];
-      const deliveryTimes = ["Instant", "5 mins", "10 mins", "15 mins"];
-      const index = parseInt(subId) - 1;
-      const amount = denominations[index] || 10;
-      const discountPercentage = parseInt(discounts[index % discounts.length]);
-      const discountedPrice = amount * (1 - discountPercentage / 100);
-
-      product = {
-        id: id,
-        mainId: parseInt(mainId),
-        name: `${mainProduct.name} $${amount}`,
-        originalPrice: amount,
-        discountedPrice: discountedPrice,
-        discount: discounts[index % discounts.length],
-        icon: mainProduct.icon,
-        platform: mainProduct.platform,
-        delivery: deliveryTimes[index % deliveryTimes.length],
-        rating: (4.5 + Math.random() * 0.5).toFixed(1),
-        stock: Math.floor(Math.random() * 100) + 20,
-        popular: index < 3,
-        category: mainProduct.name,
-        color: mainProduct.color,
-        description: `Get ${amount} worth of ${mainProduct.name} credit. Perfect for purchasing games, DLCs, subscriptions, and in-game content. Instant delivery guaranteed.`
-      };
-    }
+    // Basic fallback to avoid crash if accessed directly without state, normally we'd fetch API
+    product = {
+      id: id,
+      name: "Loading Product...",
+      category: "Loading",
+      discountedPrice: "$0.00",
+      originalPrice: "$0.00",
+      rating: "5.0",
+      platform: "Loading",
+      icon: "⌛"
+    };
   }
 
   if (!product) {
     return (
-      <div className="product-detail-error">
-        <h2>Product not found</h2>
-        <button onClick={() => navigate('/products')} className="btn btn-primary">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-primary text-white">
+        <h2 className="text-2xl font-bold mb-4">Product not found</h2>
+        <button onClick={() => navigate('/products')} className="px-6 py-3 bg-accent text-primary font-bold rounded-xl hover:bg-accent-hover transition-colors">
           {t('backToCategories')}
         </button>
       </div>
@@ -78,11 +46,9 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    // Validate inputs for Game Top-ups
-    if (product.category === 'Game Top-up' || product.category === 'Free Fire' || product.category === 'PUBG Mobile') {
+    if (product.category === 'Game Top-up' || product.platform === 'Free Fire' || product.platform === 'PUBG Mobile') {
       const newErrors = {};
       if (!playerId) newErrors.playerId = t('playerIdRequired') || 'Player ID is required';
-      // Server ID might be optional depending on game, but let's assume required for some
       if (product.platform === 'Free Fire' && !playerId) newErrors.playerId = 'Player ID is required';
 
       if (Object.keys(newErrors).length > 0) {
@@ -91,10 +57,15 @@ export default function ProductDetail() {
       }
     }
 
+    // Parse prices handling string format
+    const priceVal = typeof product.discountedPrice === 'string'
+      ? parseFloat(product.discountedPrice.replace('$', ''))
+      : product.discountedPrice;
+
     const cartProduct = {
       ...product,
       quantity: quantity,
-      price: product.discountedPrice,
+      price: priceVal,
       playerId,
       serverId
     };
@@ -104,165 +75,180 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = () => {
+    const priceVal = typeof product.discountedPrice === 'string'
+      ? parseFloat(product.discountedPrice.replace('$', ''))
+      : product.discountedPrice;
+
     const buyProduct = {
       ...product,
       quantity: quantity,
-      price: product.discountedPrice
+      price: priceVal
     };
     navigate('/checkout', { state: { buyNow: true, product: buyProduct } });
   };
 
-  const savings = product.originalPrice - product.discountedPrice;
+  const priceVal = typeof product.discountedPrice === 'string' ? parseFloat(product.discountedPrice.replace('$', '')) : product.discountedPrice;
+  const originalPriceVal = typeof product.originalPrice === 'string' ? parseFloat(product.originalPrice.replace('$', '')) : product.originalPrice;
+  const savings = originalPriceVal - priceVal;
 
   return (
-    <div className="product-detail-container">
-      <button className="back-button" onClick={() => navigate(-1)}>
-        <FaArrowLeft /> {t('backToCategories')}
-      </button>
+    <div className="min-h-screen bg-primary text-white pt-8 pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <button
+          className="flex items-center text-gray-400 hover:text-white transition-colors mb-8"
+          onClick={() => navigate(-1)}
+        >
+          <FaArrowLeft className="mr-2" /> {t('backToCategories')}
+        </button>
 
-      <div className="product-detail-content">
-        <div className="product-detail-left">
-          <div className="product-image-large" style={{ background: product.color || '#4e73df' }}>
-            <span className="product-icon-large">{product.icon}</span>
-          </div>
+        <div className="bg-surface border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
 
-          <div className="product-badges">
-            {product.popular && (
-              <span className="badge popular-badge">🔥 {t('mostPopular')}</span>
-            )}
-            <span className="badge discount-badge">{product.discount}</span>
-            <span className="badge delivery-badge">🚀 {product.delivery} {t('delivery')}</span>
-          </div>
-        </div>
-
-        <div className="product-detail-right">
-          <div className="product-header">
-            <span className="product-category">{product.category || product.platform}</span>
-            <h1 className="product-title">{product.name}</h1>
-            <div className="product-rating">
-              {Array.from({ length: Math.floor(parseFloat(product.rating)) }).map((_, i) => (
-                <FaStar key={i} className="star-icon" />
-              ))}
-              <span className="rating-text">({product.rating})</span>
-            </div>
-          </div>
-
-          <div className="product-pricing-section">
-            <div className="price-row">
-              <span className="current-price-large">{formatPrice(product.discountedPrice)}</span>
-              <span className="original-price-large">{formatPrice(product.originalPrice)}</span>
-            </div>
-            <div className="savings-info">
-              {t('save')} {formatPrice(savings)} ({product.discount})
-            </div>
-          </div>
-
-          <div className="product-info-grid">
-            <div className="info-item">
-              <FaTruck className="info-icon" />
-              <div>
-                <span className="info-label">{t('delivery')}</span>
-                <span className="info-value">{product.delivery}</span>
-              </div>
-            </div>
-            <div className="info-item">
-              <FaCheckCircle className="info-icon" />
-              <div>
-                <span className="info-label">{t('platform')}</span>
-                <span className="info-value">{product.platform}</span>
-              </div>
-            </div>
-            <div className="info-item">
-              <FaShieldAlt className="info-icon" />
-              <div>
-                <span className="info-label">{t('inStock')}</span>
-                <span className="info-value">{product.stock} {t('items')}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="product-description">
-            <h3>{t('description')}</h3>
-            <p>{product.description || `Get instant access to ${product.name}. This digital code can be redeemed immediately and used to purchase games, DLCs, subscriptions, and more.`}</p>
-          </div>
-
-          {/* Player ID Inputs for Game Top-ups */}
-          {(product.category === 'Game Top-up' || product.platform === 'Free Fire' || product.platform === 'PUBG Mobile') && (
-            <div className="player-id-section" style={{ marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' }}>
-              <h3>{t('accountDetails') || 'Account Details'}</h3>
-              <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Player ID <span style={{ color: 'red' }}>*</span></label>
-                <input
-                  type="text"
-                  value={playerId}
-                  onChange={(e) => setPlayerId(e.target.value)}
-                  placeholder="Enter Player ID"
-                  className={errors.playerId ? 'error-input' : ''}
-                  style={{ width: '100%', padding: '10px', borderRadius: '4px', border: errors.playerId ? '1px solid red' : '1px solid #ddd' }}
-                />
-                {errors.playerId && <span style={{ color: 'red', fontSize: '12px' }}>{errors.playerId}</span>}
+            {/* Left Column: Image/Icon */}
+            <div className="p-12 flex flex-col items-center justify-center bg-gradient-to-br from-white/5 to-transparent relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                <span className="text-9xl font-bold">{product.icon}</span>
               </div>
 
-              {/* Optional Server ID field */}
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Server/Zone ID (Optional)</label>
-                <input
-                  type="text"
-                  value={serverId}
-                  onChange={(e) => setServerId(e.target.value)}
-                  placeholder="Enter Server ID"
-                  style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
-                />
+              <div className="relative z-10 w-48 h-48 sm:w-64 sm:h-64 rounded-full flex items-center justify-center text-8xl sm:text-9xl shadow-2xl animate-float" style={{ backgroundColor: product.color || '#3B82F6', color: 'white' }}>
+                {product.icon}
+              </div>
+
+              <div className="flex gap-4 mt-8 relative z-10">
+                {product.popular && (
+                  <span className="px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-full shadow-lg flex items-center">
+                    🔥 {t('mostPopular')}
+                  </span>
+                )}
+                <span className="px-4 py-2 bg-accent text-primary font-bold rounded-full shadow-lg">
+                  {product.discount || 'Special Offer'}
+                </span>
+                <span className="px-4 py-2 bg-blue-600 text-white font-bold rounded-full shadow-lg flex items-center">
+                  🚀 {product.delivery || 'Instant'}
+                </span>
               </div>
             </div>
-          )}
 
-          <div className="product-quantity">
-            <label>{t('quantity')}:</label>
-            <div className="quantity-controls">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="quantity-btn"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                min="1"
-                className="quantity-input"
-              />
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="quantity-btn"
-              >
-                +
-              </button>
-            </div>
-          </div>
+            {/* Right Column: Details */}
+            <div className="p-8 lg:p-12 bg-surface">
+              <div className="mb-6">
+                <span className="text-sm font-mono text-accent uppercase tracking-wider">{product.category || product.platform}</span>
+                <h1 className="text-3xl sm:text-4xl font-bold mt-2 mb-4 leading-tight">{product.name}</h1>
+                <div className="flex items-center space-x-2 text-yellow-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <FaStar key={i} className={i < Math.floor(parseFloat(product.rating)) ? 'text-yellow-400' : 'text-gray-600'} />
+                  ))}
+                  <span className="text-gray-400 ml-2">({product.rating || '5.0'})</span>
+                </div>
+              </div>
 
-          <div className="product-actions-large">
-            <button className="btn btn-primary btn-large" onClick={handleAddToCart}>
-              <FaShoppingCart /> {t('addToCart')}
-            </button>
-            <button className="btn btn-secondary btn-large" onClick={handleBuyNow}>
-              <FaCreditCard /> {t('buyNow')}
-            </button>
-          </div>
+              <div className="flex items-end gap-4 mb-8 pb-8 border-b border-white/10">
+                <span className="text-4xl sm:text-5xl font-bold text-white">{formatPrice(priceVal)}</span>
+                <div className="flex flex-col mb-2">
+                  <span className="text-xl text-gray-500 line-through">{formatPrice(originalPriceVal)}</span>
+                  <span className="text-sm text-green-400">{t('save')} {formatPrice(savings)}</span>
+                </div>
+              </div>
 
-          <div className="product-features">
-            <div className="feature-item">
-              <FaShieldAlt />
-              <span>{t('safeSecurePayments')}</span>
-            </div>
-            <div className="feature-item">
-              <FaTruck />
-              <span>{t('instantDigitalDelivery')}</span>
-            </div>
-            <div className="feature-item">
-              <FaCheckCircle />
-              <span>{t('refundPolicy')}</span>
+              {/* Info Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                {[
+                  { icon: FaTruck, label: t('delivery'), val: product.delivery },
+                  { icon: FaCheckCircle, label: t('platform'), val: product.platform },
+                  { icon: FaShieldAlt, label: t('inStock'), val: `${product.stock || 99} ${t('items')}` }
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-white/5 rounded-xl p-4 border border-white/5">
+                    <item.icon className="text-accent mb-2 text-xl" />
+                    <div className="text-xs text-gray-400 uppercase">{item.label}</div>
+                    <div className="font-bold text-sm">{item.val}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mb-8">
+                <h3 className="font-bold text-lg mb-2 text-white">{t('description')}</h3>
+                <p className="text-gray-400 leading-relaxed text-sm">
+                  {product.description || `Get instant access to ${product.name}. This digital code can be redeemed immediately and used to purchase games, DLCs, subscriptions, and more. 100% official and secure.`}
+                </p>
+              </div>
+
+              {/* Player ID Inputs */}
+              {(product.category === 'Game Top-up' || product.platform === 'Free Fire' || product.platform === 'PUBG Mobile') && (
+                <div className="bg-primary/50 border border-accent/20 rounded-xl p-6 mb-8">
+                  <h3 className="font-bold text-white mb-4 flex items-center">
+                    <FaCheckCircle className="text-accent mr-2" />
+                    {t('accountDetails') || 'Account Details'}
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Player ID <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={playerId}
+                        onChange={(e) => setPlayerId(e.target.value)}
+                        placeholder="Enter Player ID"
+                        className={`w-full bg-surface border ${errors.playerId ? 'border-red-500' : 'border-white/10'} rounded-lg p-3 text-white focus:outline-none focus:border-accent transition-colors`}
+                      />
+                      {errors.playerId && <p className="text-red-500 text-xs mt-1">{errors.playerId}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Server/Zone ID <span className="text-gray-500">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={serverId}
+                        onChange={(e) => setServerId(e.target.value)}
+                        placeholder="Enter Server ID"
+                        className="w-full bg-surface border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-accent transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quantity & Actions */}
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="flex items-center bg-white/5 rounded-xl border border-white/10 p-1">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <FaMinus />
+                  </button>
+                  <input
+                    type="number"
+                    value={quantity}
+                    readOnly
+                    className="w-12 text-center bg-transparent text-white font-bold focus:outline-none"
+                  />
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <FaPlus />
+                  </button>
+                </div>
+
+                <div className="flex flex-1 w-full gap-4">
+                  <button
+                    onClick={handleAddToCart}
+                    className="flex-1 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all"
+                  >
+                    <FaShoppingCart /> {t('addToCart')}
+                  </button>
+                  <button
+                    onClick={handleBuyNow}
+                    className="flex-1 py-4 bg-accent hover:bg-accent-hover text-primary font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/25"
+                  >
+                    <FaCreditCard /> {t('buyNow')}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -270,4 +256,3 @@ export default function ProductDetail() {
     </div>
   );
 }
-

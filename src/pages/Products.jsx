@@ -1,12 +1,9 @@
-// src/components/Products.jsx
-// frontend/src/pages/Products.jsx
-
+// src/pages/Products.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
-import { FaShoppingCart, FaCreditCard } from "react-icons/fa";
-import "./Products.css";
+import { FaShoppingCart, FaCreditCard, FaSearch, FaFilter, FaArrowLeft, FaStar, FaBolt, FaGamepad, FaMobileAlt, FaApple, FaGoogle, FaSpotify, FaTv, FaAmazon } from "react-icons/fa";
 
 export default function Products() {
   const navigate = useNavigate();
@@ -26,7 +23,7 @@ export default function Products() {
       platform: "Steam",
       productCount: 15,
       featured: true,
-      popularItems: ["$5 Wallet", "$10 Wallet", "$20 Wallet", "$50 Wallet", "$100 Wallet"],
+      popularItems: ["$5 Wallet", "$10 Wallet", "$20 Wallet", "$50 Wallet"],
       deliveryTime: "Instant Delivery"
     },
     {
@@ -38,7 +35,7 @@ export default function Products() {
       platform: "PlayStation",
       productCount: 12,
       featured: true,
-      popularItems: ["$10 PSN Card", "$20 PSN Card", "$50 PSN Card", "PS Plus 1 Month"],
+      popularItems: ["$10 PSN Card", "$20 PSN Card", "$50 PSN Card"],
       deliveryTime: "1-5 Minutes"
     },
     {
@@ -74,7 +71,7 @@ export default function Products() {
       platform: "Apple",
       productCount: 20,
       featured: true,
-      popularItems: ["$15 iTunes", "$25 iTunes", "$50 iTunes", "$100 iTunes"],
+      popularItems: ["$15 iTunes", "$25 iTunes", "$50 iTunes"],
       deliveryTime: "Instant"
     },
     {
@@ -145,12 +142,12 @@ export default function Products() {
     const denominations = [5, 10, 20, 25, 30, 50, 75, 100, 150, 200];
     const discounts = ["5% OFF", "10% OFF", "15% OFF", "20% OFF", "25% OFF"];
     const deliveryTimes = ["Instant", "5 mins", "10 mins", "15 mins"];
-    
+
     return denominations.map((amount, index) => {
       const originalPrice = amount;
       const discountPercentage = parseInt(discounts[index % discounts.length]);
       const discountedPrice = originalPrice * (1 - discountPercentage / 100);
-      
+
       return {
         id: `${mainProductId}-${index + 1}`,
         mainId: mainProductId,
@@ -169,290 +166,203 @@ export default function Products() {
     });
   };
 
-  // Get all sub-products for the selected main product
   const subProducts = selectedMainProduct ? generateSubProducts(selectedMainProduct.id) : [];
 
-  // Sort sub-products
   const sortedSubProducts = [...subProducts].sort((a, b) => {
     const priceA = parseFloat(a.discountedPrice.replace('$', ''));
     const priceB = parseFloat(b.discountedPrice.replace('$', ''));
-    
+
     switch (sortBy) {
-      case "price-low":
-        return priceA - priceB;
-      case "price-high":
-        return priceB - priceA;
-      case "rating":
-        return parseFloat(b.rating) - parseFloat(a.rating);
-      case "popular":
-        return (b.popular ? 1 : 0) - (a.popular ? 1 : 0);
-      default:
-        return 0;
+      case "price-low": return priceA - priceB;
+      case "price-high": return priceB - priceA;
+      case "rating": return parseFloat(b.rating) - parseFloat(a.rating);
+      case "popular": return (b.popular ? 1 : 0) - (a.popular ? 1 : 0);
+      default: return 0;
     }
   });
 
-  const handleMainProductClick = (product) => {
-    setSelectedMainProduct(product);
-  };
-
-  const handleBackToCategories = () => {
-    setSelectedMainProduct(null);
-  };
-
   const handleAddToCart = (product) => {
-    const price = parseFloat(product.discountedPrice.replace('$', ''));
-    const originalPrice = parseFloat(product.originalPrice.replace('$', ''));
-    
-    const cartProduct = {
+    addToCart({
       ...product,
-      price: price,
-      originalPrice: originalPrice,
+      price: parseFloat(product.discountedPrice.replace('$', '')),
+      originalPrice: parseFloat(product.originalPrice.replace('$', '')),
       quantity: 1
-    };
-    
-    addToCart(cartProduct);
+    });
     alert(`✅ ${product.name} ${t('addToCart')}!`);
   };
 
   const handleBuyNow = (product) => {
-    const price = parseFloat(product.discountedPrice.replace('$', ''));
-    const originalPrice = parseFloat(product.originalPrice.replace('$', ''));
-    
     const buyProduct = {
       ...product,
-      price: price,
-      originalPrice: originalPrice,
+      price: parseFloat(product.discountedPrice.replace('$', '')),
+      originalPrice: parseFloat(product.originalPrice.replace('$', '')),
       quantity: 1
     };
-    
     navigate('/checkout', { state: { buyNow: true, product: buyProduct } });
   };
 
   const handleViewDetails = (product) => {
-    navigate(`/product/${product.id}`, { 
-      state: { 
-        product: {
-          ...product,
-          price: parseFloat(product.discountedPrice.replace('$', '')),
-          originalPrice: parseFloat(product.originalPrice.replace('$', ''))
-        }
-      } 
+    navigate(`/product/${product.id}`, {
+      state: { product: { ...product, price: parseFloat(product.discountedPrice.replace('$', '')), originalPrice: parseFloat(product.originalPrice.replace('$', '')) } }
     });
   };
 
   return (
-    <div className="products-container">
+    <div className="min-h-screen bg-primary pt-8 pb-12 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="products-header">
-        <h1>{t('instantDigitalGamingCodes')}</h1>
-        <p>{t('getInstantAccess')}</p>
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-white mb-4">{t('instantDigitalGamingCodes')}</h1>
+        <div className="w-24 h-1 bg-accent mx-auto rounded-full"></div>
+        <p className="mt-4 text-gray-400 max-w-2xl mx-auto">{t('getInstantAccess')}</p>
       </div>
 
-      <div className="products-content">
-        {/* Main Content Area */}
-        <div className="products-main">
-          {!selectedMainProduct ? (
-            /* CATEGORIES VIEW - BIG CARDS */
-            <>
-              <div className="categories-header">
-                <h2>🎮 {t('featuredCategories')}</h2>
-                <p>{t('chooseFromCategories')}</p>
-              </div>
-              
-              <div className="main-categories-grid">
-                {mainProducts.map(product => (
-                  <div 
-                    key={product.id} 
-                    className="main-category-card"
-                    onClick={() => handleMainProductClick(product)}
-                    style={{
-                      background: `linear-gradient(135deg, ${product.color}15, white)`,
-                      border: `2px solid ${product.color}30`,
-                      borderLeft: `6px solid ${product.color}`
-                    }}
-                  >
-                    <div className="category-card-header">
-                      <div 
-                        className="category-card-icon"
-                        style={{ 
-                          background: product.color,
-                          color: "white"
-                        }}
-                      >
+      <div className="max-w-7xl mx-auto">
+        {!selectedMainProduct ? (
+          /* CATEGORIES VIEW */
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mainProducts.map(product => (
+                <div
+                  key={product.id}
+                  className="group relative bg-surface border border-white/5 rounded-2xl overflow-hidden hover:border-accent hover:shadow-2xl hover:shadow-accent/10 transition-all duration-300 cursor-pointer"
+                  onClick={() => setSelectedMainProduct(product)}
+                >
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <span className="text-9xl font-bold">{product.icon}</span>
+                  </div>
+
+                  <div className="p-6 relative z-10">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="w-16 h-16 rounded-xl flex items-center justify-center text-4xl shadow-lg" style={{ backgroundColor: product.color }}>
                         {product.icon}
                       </div>
-                      
-                      <div className="category-card-badges">
+                      <div className="flex flex-col items-end space-y-2">
                         {product.featured && (
-                          <span className="featured-badge">🔥 Featured</span>
+                          <span className="px-2 py-1 bg-yellow-500/20 text-yellow-500 text-xs font-bold rounded uppercase border border-yellow-500/20">
+                            Featured
+                          </span>
                         )}
-                        <span className="product-count-badge">
-                          {product.productCount} Products
-                        </span>
+                        <span className="text-xs text-gray-500 font-mono">{product.productCount} Items</span>
                       </div>
                     </div>
-                    
-                    <div className="category-card-body">
-                      <h3 className="category-name">{product.name}</h3>
-                      <p className="category-description">{product.description}</p>
-                      
-                      <div className="category-platform">
-                        <span className="platform-tag">{t('platform')}: {product.platform}</span>
-                        <span className="delivery-tag">🚀 {product.deliveryTime}</span>
+
+                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-accent transition-colors">{product.name}</h3>
+                    <p className="text-sm text-gray-400 mb-6 line-clamp-2">{product.description}</p>
+
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center text-xs text-gray-400">
+                        <FaBolt className="mr-2 text-yellow-400" />
+                        {product.deliveryTime}
                       </div>
-                      
-                      <div className="popular-items">
-                        <span className="popular-label">{t('popularItems')}:</span>
-                        <div className="popular-tags">
-                          {product.popularItems.map((item, index) => (
-                            <span key={index} className="popular-item-tag">{item}</span>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-2">
+                        {product.popularItems.slice(0, 2).map((item, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-white/5 rounded text-xs text-gray-400 border border-white/5">{item}</span>
+                        ))}
+                        {product.popularItems.length > 2 && <span className="text-xs text-gray-500 self-center">+{product.popularItems.length - 2} more</span>}
                       </div>
                     </div>
-                    
-                    <div className="category-card-footer">
-                      <button 
-                        className="view-products-btn"
-                        style={{ background: product.color }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMainProductClick(product);
-                        }}
-                      >
-                        {t('viewAll')} ({product.productCount})
+
+                    <button className="w-full py-3 bg-white/5 hover:bg-accent hover:text-primary rounded-xl font-bold transition-colors flex items-center justify-center group-hover:shadow-lg">
+                      {t('viewAll')}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 bg-surface p-6 rounded-2xl border border-white/5">
+              {[
+                { icon: "📦", label: t('totalProducts'), val: mainProducts.reduce((s, p) => s + p.productCount, 0) },
+                { icon: "⚡", label: t('fastestDelivery'), val: "Instant" },
+                { icon: "⭐", label: t('customerRating'), val: "4.9/5" },
+                { icon: "🎯", label: t('categories'), val: mainProducts.length }
+              ].map((stat, i) => (
+                <div key={i} className="text-center p-4">
+                  <div className="text-2xl mb-2">{stat.icon}</div>
+                  <div className="text-2xl font-bold text-white">{stat.val}</div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* SINGLE CATEGORY PRODUCTS VIEW */
+          <div>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-surface p-4 rounded-xl border border-white/5">
+              <button
+                onClick={() => setSelectedMainProduct(null)}
+                className="flex items-center text-gray-400 hover:text-white transition-colors mb-4 md:mb-0"
+              >
+                <FaArrowLeft className="mr-2" /> {t('backToCategories')}
+              </button>
+
+              <div className="text-center md:text-left">
+                <h2 className="text-2xl font-bold text-white flex items-center justify-center md:justify-start gap-2">
+                  <span>{selectedMainProduct.icon}</span> {selectedMainProduct.name}
+                </h2>
+                <p className="text-sm text-gray-400 mt-1">{t('showingProducts', { count: sortedSubProducts.length, name: selectedMainProduct.name })}</p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <FaFilter className="text-gray-500" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-primary border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="popular">{t('mostPopular')}</option>
+                  <option value="price-low">{t('priceLowToHigh')}</option>
+                  <option value="price-high">{t('priceHighToLow')}</option>
+                  <option value="rating">{t('highestRated')}</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {sortedSubProducts.map(product => (
+                <div key={product.id} className="bg-surface border border-white/5 rounded-xl overflow-hidden hover:border-accent/50 transition-all duration-200 group">
+                  <div className="relative p-6 flex justify-center bg-gradient-to-b from-white/5 to-transparent">
+                    {product.popular && (
+                      <div className="absolute top-2 right-2 px-2 py-1 bg-red-500 text-white text-[10px] font-bold uppercase rounded shadow-lg">
+                        Hot
+                      </div>
+                    )}
+                    <span className="text-6xl drop-shadow-2xl filter transform group-hover:scale-110 transition-transform duration-300">{product.icon}</span>
+                    <div className="absolute bottom-2 left-0 w-full text-center">
+                      <span className="px-2 py-1 bg-accent/90 text-primary text-xs font-bold rounded-full">{product.discount}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-mono text-gray-500 bg-white/5 px-2 py-0.5 rounded">{product.platform}</span>
+                      <div className="flex items-center text-yellow-400 text-xs gap-1">
+                        <FaStar /> {product.rating}
+                      </div>
+                    </div>
+
+                    <h3 className="font-bold text-white mb-4 line-clamp-1">{product.name}</h3>
+
+                    <div className="flex items-baseline justify-between mb-4">
+                      <span className="text-lg font-bold text-accent">{formatPrice(parseFloat(product.discountedPrice.replace('$', '')))}</span>
+                      <span className="text-sm text-gray-500 line-through">{formatPrice(parseFloat(product.originalPrice.replace('$', '')))}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button onClick={() => handleAddToCart(product)} className="px-3 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg flex items-center justify-center transition-colors">
+                        <FaShoppingCart className="mr-2" /> Add
+                      </button>
+                      <button onClick={() => handleBuyNow(product)} className="px-3 py-2 bg-accent hover:bg-accent-hover text-primary text-sm font-bold rounded-lg flex items-center justify-center transition-colors">
+                        Buy Now
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-              
-              <div className="categories-stats">
-                <div className="stat-card">
-                  <div className="stat-icon">📦</div>
-                  <div className="stat-content">
-                    <div className="stat-number">
-                      {mainProducts.reduce((sum, p) => sum + p.productCount, 0)}
-                    </div>
-                    <div className="stat-label">{t('totalProducts')}</div>
-                  </div>
                 </div>
-                <div className="stat-card">
-                  <div className="stat-icon">⚡</div>
-                  <div className="stat-content">
-                    <div className="stat-number">Instant</div>
-                    <div className="stat-label">{t('fastestDelivery')}</div>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon">⭐</div>
-                  <div className="stat-content">
-                    <div className="stat-number">4.8/5</div>
-                    <div className="stat-label">{t('customerRating')}</div>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon">🎯</div>
-                  <div className="stat-content">
-                    <div className="stat-number">{mainProducts.length}</div>
-                    <div className="stat-label">{t('categories')}</div>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            /* PRODUCTS VIEW */
-            <>
-              <div className="products-toolbar">
-                <div className="results-section">
-                  <button 
-                    className="back-to-categories-btn"
-                    onClick={handleBackToCategories}
-                  >
-                    ← {t('backToCategories')}
-                  </button>
-                  <h2>{selectedMainProduct.name} - {t('allProducts')}</h2>
-                  <p>{t('showingProducts', { count: sortedSubProducts.length, name: selectedMainProduct.name })}</p>
-                </div>
-                
-                <div className="sort-options">
-                  <label>{t('sortBy')}:</label>
-                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                    <option value="popular">{t('mostPopular')}</option>
-                    <option value="price-low">{t('priceLowToHigh')}</option>
-                    <option value="price-high">{t('priceHighToLow')}</option>
-                    <option value="rating">{t('highestRated')}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="products-grid">
-                {sortedSubProducts.map(product => (
-                  <div key={product.id} className="product-card">
-                    <div className="product-badge">{product.discount}</div>
-                    <div className="product-image">{product.icon}</div>
-                    
-                    <div className="product-platform">
-                      <span className="platform-tag">{product.platform}</span>
-                      {product.popular && (
-                        <span className="popular-tag">🔥 Popular</span>
-                      )}
-                    </div>
-                    
-                    <h3 className="product-name">{product.name}</h3>
-                    
-                    <div className="product-rating">
-                      {"⭐".repeat(Math.floor(parseFloat(product.rating)))}
-                      <span className="rating-number">({product.rating})</span>
-                    </div>
-
-                    <div className="product-pricing">
-                      <span className="current-price">{formatPrice(parseFloat(product.discountedPrice.replace('$', '')))}</span>
-                      <span className="original-price">{formatPrice(parseFloat(product.originalPrice.replace('$', '')))}</span>
-                      <span className="savings">
-                        {t('save')} {formatPrice(parseFloat(product.originalPrice.replace('$', '')) - parseFloat(product.discountedPrice.replace('$', '')))}
-                      </span>
-                    </div>
-
-                    <div className="product-delivery">
-                      <span className="delivery-badge">
-                        🚀 {product.delivery} {t('delivery')}
-                      </span>
-                      <span className="stock-info">
-                        {product.stock > 10 ? (
-                          <span className="in-stock">✓ {t('inStock')} ({product.stock})</span>
-                        ) : (
-                          <span className="low-stock">⚠ {t('lowStock')} ({product.stock})</span>
-                        )}
-                      </span>
-                    </div>
-
-                    <div className="product-actions">
-                      <button 
-                        className="btn btn-primary"
-                        onClick={() => handleAddToCart(product)}
-                      >
-                        <FaShoppingCart /> {t('addToCart')}
-                      </button>
-                      <button 
-                        className="btn btn-buy"
-                        onClick={() => handleBuyNow(product)}
-                      >
-                        <FaCreditCard /> {t('buyNow')}
-                      </button>
-                      <button 
-                        className="btn btn-outline"
-                        onClick={() => handleViewDetails(product)}
-                      >
-                        {t('viewDetails')}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
