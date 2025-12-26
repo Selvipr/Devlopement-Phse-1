@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FaCreditCard, FaLock, FaCheckCircle, FaArrowLeft } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
-import './Checkout.css';
+
 
 export default function Checkout() {
   const { cartItems, getCartTotal, clearCart, addToCart } = useCart();
@@ -99,43 +99,59 @@ export default function Checkout() {
     setIsProcessing(true);
 
     try {
+      // Create a timeout promise to prevent infinite hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), 15000)
+      );
+
       // 1. Create Order in Supabase
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert([
-          {
-            guest_email: formData.email,
-            total_amount: total,
-            status: 'pending',
-            payment_status: 'paid', // Simulating successful payment
-            payment_method: formData.paymentMethod,
-            shipping_address: formData
-          }
-        ])
-        .select()
-        .single();
+      // We wrap the Supabase/DB calls in a promise to race against the timeout
+      const createOrderPromise = async () => {
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .insert([
+            {
+              // Link to the authenticated user if they are logged in
+              user_id: user?.id || null,
+              guest_email: formData.email,
+              total_amount: total,
+              status: 'pending',
+              payment_status: 'paid', // Simulating successful payment
+              payment_method: formData.paymentMethod,
+              shipping_address: formData
+            }
+          ])
+          .select()
+          .single();
 
-      if (orderError) throw orderError;
+        if (orderError) throw orderError;
 
-      // 2. Create Order Items
-      const orderItemsData = cartItems.map(item => ({
-        order_id: orderData.id,
-        product_id: null, // We don't have real product IDs in DB yet, so leaving null or we could insert them first
-        product_name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        player_id: item.playerId || null,
-        server_id: item.serverId || null
-      }));
+        // 2. Create Order Items
+        const orderItemsData = cartItems.map(item => ({
+          order_id: orderData.id,
+          // If you have a products table, use item.id -> product_id
+          // For now, keeping product_id null as per your schema preference or use item.id if ready
+          product_id: item.id || null,
+          product_name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          player_id: item.playerId || null,
+          server_id: item.serverId || null
+        }));
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItemsData);
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItemsData);
 
-      if (itemsError) throw itemsError;
+        if (itemsError) throw itemsError;
+
+        return orderData;
+      };
+
+      // Race the order creation against the timeout
+      const orderData = await Promise.race([createOrderPromise(), timeoutPromise]);
 
       // Success
-      setIsProcessing(false);
       clearCart();
       navigate('/orders', {
         state: {
@@ -146,7 +162,9 @@ export default function Checkout() {
 
     } catch (error) {
       console.error('Error creating order:', error);
-      alert('Failed to place order: ' + error.message);
+      alert('Failed to place order: ' + (error.message || 'Unknown error'));
+    } finally {
+      // ALWAYS stop the loading spinner, whether success or fail
       setIsProcessing(false);
     }
   };
@@ -157,12 +175,12 @@ export default function Checkout() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="checkout-empty">
-        <div className="empty-cart-message">
-          <FaArrowLeft className="empty-icon" />
-          <h2>Your cart is empty</h2>
-          <p>Add some products to your cart before checkout</p>
-          <button onClick={() => navigate('/products')} className="btn-primary">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+        <div className="text-center max-w-lg">
+          <div className="text-9xl mb-6 opacity-30 text-gray-500"><FaArrowLeft className="inline-block" /></div>
+          <h2 className="text-3xl font-bold text-white mb-4">Your cart is empty</h2>
+          <p className="text-gray-400 text-lg mb-8">Add some products to your cart before checkout</p>
+          <button onClick={() => navigate('/products')} className="px-8 py-3 bg-accent hover:bg-accent-hover text-primary font-bold rounded-xl transition-all shadow-lg shadow-accent/20">
             Continue Shopping
           </button>
         </div>
@@ -171,250 +189,271 @@ export default function Checkout() {
   }
 
   return (
-    <div className="checkout-container">
-      <div className="checkout-header">
-        <button onClick={() => navigate('/cart')} className="back-btn">
-          <FaArrowLeft /> {t('continueShopping')}
-        </button>
-        <h1>Checkout</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-6 border-b border-white/10 gap-4">
+        <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Checkout</h1>
+        <div className="flex gap-4">
+          <button onClick={() => navigate('/')} className="text-gray-400 hover:text-white transition-colors">
+            Home
+          </button>
+          <button onClick={() => navigate('/products')} className="text-gray-400 hover:text-white transition-colors">
+            Products
+          </button>
+          <button onClick={() => navigate('/cart')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+            <FaArrowLeft /> {t('continueShopping') || "Back to Cart"}
+          </button>
+        </div>
       </div>
 
-      <div className="checkout-content">
-        <div className="checkout-form-section">
-          <form onSubmit={handleSubmit} className="checkout-form">
-            {/* Contact Information */}
-            <section className="form-section">
-              <h2>Contact Information</h2>
-              <div className="form-group">
-                <label>Email Address *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="your@email.com"
-                  className={errors.email ? 'error' : ''}
-                />
-                {errors.email && <span className="error-message">{errors.email}</span>}
-              </div>
-              <div className="form-group">
-                <label>Phone Number *</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="+1 234 567 8900"
-                  className={errors.phone ? 'error' : ''}
-                />
-                {errors.phone && <span className="error-message">{errors.phone}</span>}
-              </div>
-            </section>
-
-            {/* Shipping Address */}
-            <section className="form-section">
-              <h2>Shipping Address</h2>
-              <div className="form-group">
-                <label>Full Name *</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  placeholder="John Doe"
-                  className={errors.fullName ? 'error' : ''}
-                />
-                {errors.fullName && <span className="error-message">{errors.fullName}</span>}
-              </div>
-              <div className="form-group">
-                <label>Address *</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="123 Main Street"
-                  className={errors.address ? 'error' : ''}
-                />
-                {errors.address && <span className="error-message">{errors.address}</span>}
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>City *</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    placeholder="New York"
-                    className={errors.city ? 'error' : ''}
-                  />
-                  {errors.city && <span className="error-message">{errors.city}</span>}
+      <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex-grow">
+          <div className="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 lg:p-8 shadow-xl">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Contact Information */}
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-white border-b border-white/10 pb-2">Contact Information</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Email Address *</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="your@email.com"
+                      className={`w-full bg-primary/50 border ${errors.email ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
+                    />
+                    {errors.email && <span className="text-xs text-red-500">{errors.email}</span>}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Phone Number *</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="+1 234 567 8900"
+                      className={`w-full bg-primary/50 border ${errors.phone ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
+                    />
+                    {errors.phone && <span className="text-xs text-red-500">{errors.phone}</span>}
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>Zip Code *</label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    placeholder="10001"
-                    className={errors.zipCode ? 'error' : ''}
-                  />
-                  {errors.zipCode && <span className="error-message">{errors.zipCode}</span>}
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Country *</label>
-                <select
-                  name="country"
-                  value={formData.country}
-                  onChange={handleInputChange}
-                  className={errors.country ? 'error' : ''}
-                >
-                  <option value="">Select Country</option>
-                  <option value="US">United States</option>
-                  <option value="RU">Russia</option>
-                  <option value="AE">United Arab Emirates</option>
-                  <option value="UK">United Kingdom</option>
-                  <option value="CA">Canada</option>
-                  <option value="AU">Australia</option>
-                </select>
-                {errors.country && <span className="error-message">{errors.country}</span>}
-              </div>
-            </section>
+              </section>
 
-            {/* Payment Method */}
-            <section className="form-section">
-              <h2>Payment Method</h2>
-              <div className="payment-methods">
-                <label className="payment-option">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="card"
-                    checked={formData.paymentMethod === 'card'}
-                    onChange={handleInputChange}
-                  />
-                  <FaCreditCard /> Credit/Debit Card
-                </label>
-                <label className="payment-option">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="paypal"
-                    checked={formData.paymentMethod === 'paypal'}
-                    onChange={handleInputChange}
-                  />
-                  PayPal
-                </label>
-              </div>
-
-              {formData.paymentMethod === 'card' && (
-                <div className="card-details">
-                  <div className="form-group">
-                    <label>Card Number *</label>
+              {/* Shipping Address */}
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-white border-b border-white/10 pb-2">Billing Address</h2>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Full Name *</label>
                     <input
                       type="text"
-                      name="cardNumber"
-                      value={formData.cardNumber}
+                      name="fullName"
+                      value={formData.fullName}
                       onChange={handleInputChange}
-                      placeholder="1234 5678 9012 3456"
-                      maxLength="19"
-                      className={errors.cardNumber ? 'error' : ''}
+                      placeholder="John Doe"
+                      className={`w-full bg-primary/50 border ${errors.fullName ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
                     />
-                    {errors.cardNumber && <span className="error-message">{errors.cardNumber}</span>}
+                    {errors.fullName && <span className="text-xs text-red-500">{errors.fullName}</span>}
                   </div>
-                  <div className="form-group">
-                    <label>Cardholder Name *</label>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Address *</label>
                     <input
                       type="text"
-                      name="cardName"
-                      value={formData.cardName}
+                      name="address"
+                      value={formData.address}
                       onChange={handleInputChange}
-                      placeholder="JOHN DOE"
-                      className={errors.cardName ? 'error' : ''}
+                      placeholder="123 Main Street"
+                      className={`w-full bg-primary/50 border ${errors.address ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
                     />
-                    {errors.cardName && <span className="error-message">{errors.cardName}</span>}
+                    {errors.address && <span className="text-xs text-red-500">{errors.address}</span>}
                   </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Expiry Date *</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300">City *</label>
                       <input
                         type="text"
-                        name="expiryDate"
-                        value={formData.expiryDate}
+                        name="city"
+                        value={formData.city}
                         onChange={handleInputChange}
-                        placeholder="MM/YY"
-                        maxLength="5"
-                        className={errors.expiryDate ? 'error' : ''}
+                        placeholder="New York"
+                        className={`w-full bg-primary/50 border ${errors.city ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
                       />
-                      {errors.expiryDate && <span className="error-message">{errors.expiryDate}</span>}
+                      {errors.city && <span className="text-xs text-red-500">{errors.city}</span>}
                     </div>
-                    <div className="form-group">
-                      <label>CVV *</label>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300">Zip Code *</label>
                       <input
                         type="text"
-                        name="cvv"
-                        value={formData.cvv}
+                        name="zipCode"
+                        value={formData.zipCode}
                         onChange={handleInputChange}
-                        placeholder="123"
-                        maxLength="4"
-                        className={errors.cvv ? 'error' : ''}
+                        placeholder="10001"
+                        className={`w-full bg-primary/50 border ${errors.zipCode ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
                       />
-                      {errors.cvv && <span className="error-message">{errors.cvv}</span>}
+                      {errors.zipCode && <span className="text-xs text-red-500">{errors.zipCode}</span>}
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Country *</label>
+                    <select
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      className={`w-full bg-primary/50 border ${errors.country ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
+                    >
+                      <option value="">Select Country</option>
+                      <option value="US">United States</option>
+                      <option value="RU">Russia</option>
+                      <option value="AE">United Arab Emirates</option>
+                      <option value="UK">United Kingdom</option>
+                      <option value="CA">Canada</option>
+                      <option value="AU">Australia</option>
+                    </select>
+                    {errors.country && <span className="text-xs text-red-500">{errors.country}</span>}
                   </div>
                 </div>
-              )}
-            </section>
+              </section>
 
-            <div className="form-actions">
-              <button type="submit" className="btn-primary btn-submit" disabled={isProcessing}>
-                {isProcessing ? (
-                  <>
-                    <span className="spinner"></span> Processing...
-                  </>
-                ) : (
-                  <>
-                    <FaLock /> Place Order
-                  </>
+              {/* Payment Method */}
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-white border-b border-white/10 pb-2">Payment Method</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.paymentMethod === 'card' ? 'bg-accent/10 border-accent text-white' : 'bg-primary/30 border-white/10 text-gray-400 hover:bg-white/5'}`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="card"
+                      checked={formData.paymentMethod === 'card'}
+                      onChange={handleInputChange}
+                      className="text-accent focus:ring-accent"
+                    />
+                    <FaCreditCard /> Credit/Debit Card
+                  </label>
+                  <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.paymentMethod === 'paypal' ? 'bg-accent/10 border-accent text-white' : 'bg-primary/30 border-white/10 text-gray-400 hover:bg-white/5'}`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="paypal"
+                      checked={formData.paymentMethod === 'paypal'}
+                      onChange={handleInputChange}
+                      className="text-accent focus:ring-accent"
+                    />
+                    <span>PayPal</span>
+                  </label>
+                </div>
+
+                {formData.paymentMethod === 'card' && (
+                  <div className="bg-primary/30 p-6 rounded-xl border border-white/10 space-y-4 mt-4 animate-fadeIn">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300">Card Number *</label>
+                      <input
+                        type="text"
+                        name="cardNumber"
+                        value={formData.cardNumber}
+                        onChange={handleInputChange}
+                        placeholder="1234 5678 9012 3456"
+                        maxLength="19"
+                        className={`w-full bg-surface border ${errors.cardNumber ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
+                      />
+                      {errors.cardNumber && <span className="text-xs text-red-500">{errors.cardNumber}</span>}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300">Cardholder Name *</label>
+                      <input
+                        type="text"
+                        name="cardName"
+                        value={formData.cardName}
+                        onChange={handleInputChange}
+                        placeholder="JOHN DOE"
+                        className={`w-full bg-surface border ${errors.cardName ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
+                      />
+                      {errors.cardName && <span className="text-xs text-red-500">{errors.cardName}</span>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Expiry Date *</label>
+                        <input
+                          type="text"
+                          name="expiryDate"
+                          value={formData.expiryDate}
+                          onChange={handleInputChange}
+                          placeholder="MM/YY"
+                          maxLength="5"
+                          className={`w-full bg-surface border ${errors.expiryDate ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
+                        />
+                        {errors.expiryDate && <span className="text-xs text-red-500">{errors.expiryDate}</span>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">CVV *</label>
+                        <input
+                          type="text"
+                          name="cvv"
+                          value={formData.cvv}
+                          onChange={handleInputChange}
+                          placeholder="123"
+                          maxLength="4"
+                          className={`w-full bg-surface border ${errors.cvv ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors`}
+                        />
+                        {errors.cvv && <span className="text-xs text-red-500">{errors.cvv}</span>}
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </button>
-            </div>
-          </form>
+              </section>
+
+              <div className="pt-6">
+                <button type="submit" disabled={isProcessing} className="w-full bg-gradient-to-r from-accent to-blue-600 hover:from-accent-hover hover:to-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-lg">
+                  {isProcessing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <FaLock /> Place Order
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
         {/* Order Summary */}
-        <div className="checkout-summary">
-          <div className="summary-card">
-            <h2>Order Summary</h2>
-            <div className="summary-items">
+        <div className="lg:w-[400px] flex-shrink-0">
+          <div className="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sticky top-24">
+            <h2 className="text-xl font-bold text-white mb-6 pb-4 border-b border-dashed border-white/10">Order Summary</h2>
+            <div className="space-y-4 mb-6">
               {cartItems.map(item => (
-                <div key={item.id} className="summary-item">
-                  <div className="item-info">
-                    <span className="item-name">{item.name}</span>
-                    <span className="item-quantity">x{item.quantity}</span>
+                <div key={item.id} className="flex justify-between items-start gap-4 text-sm">
+                  <div className="flex-grow">
+                    <div className="text-white font-medium">{item.name}</div>
+                    <div className="text-gray-400">x{item.quantity}</div>
                   </div>
-                  <span className="item-price">{formatPrice(item.price * item.quantity)}</span>
+                  <div className="text-white font-medium">{formatPrice(item.price * item.quantity)}</div>
                 </div>
               ))}
             </div>
-            <div className="summary-totals">
-              <div className="total-row">
+
+            <div className="space-y-3 pt-6 border-t border-dashed border-white/10">
+              <div className="flex justify-between text-gray-300">
                 <span>Subtotal</span>
-                <span>{formatPrice(subtotal)}</span>
+                <span className="text-white">{formatPrice(subtotal)}</span>
               </div>
-              <div className="total-row">
+              <div className="flex justify-between text-gray-300">
                 <span>Delivery</span>
-                <span>{delivery === 0 ? t('free') : formatPrice(delivery)}</span>
+                <span className={delivery === 0 ? 'text-emerald-400' : 'text-white'}>
+                  {delivery === 0 ? t('free') : formatPrice(delivery)}
+                </span>
               </div>
-              <div className="total-row total-final">
-                <span>Total</span>
-                <span>{formatPrice(total)}</span>
+              <div className="flex justify-between text-xl font-bold pt-4 border-t border-white/10 mt-4">
+                <span className="text-white">Total</span>
+                <span className="text-accent">{formatPrice(total)}</span>
               </div>
             </div>
-            <div className="security-badge">
+
+            <div className="mt-8 flex items-center justify-center gap-2 text-xs text-gray-500 bg-white/5 p-3 rounded-lg">
               <FaLock />
               <span>Secure checkout with 256-bit SSL encryption</span>
             </div>

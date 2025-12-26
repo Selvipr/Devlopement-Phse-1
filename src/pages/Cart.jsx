@@ -4,18 +4,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FaTrash, FaPlus, FaMinus, FaHeart, FaArrowLeft, FaShieldAlt, FaCreditCard, FaTruck, FaCheckCircle } from 'react-icons/fa';
-import './Cart.css';
+
 
 export default function Cart() {
-  const { 
-    cartItems, 
-    removeFromCart, 
-    updateQuantity, 
+  const {
+    cartItems,
+    removeFromCart,
+    updateQuantity,
     getCartTotal,
     getItemCount,
-    clearCart 
+    clearCart
   } = useCart();
-  
+
   const { t, formatPrice } = useLanguage();
   const navigate = useNavigate();
   const [savedForLater, setSavedForLater] = useState([]);
@@ -107,159 +107,149 @@ export default function Cart() {
       alert('Your cart is empty!');
       return;
     }
-    navigate('/checkout', { 
-      state: { 
-        cartItems, 
+    navigate('/checkout', {
+      state: {
+        cartItems,
         total: grandTotal,
         discount: calculateDiscount(),
         delivery: calculateDelivery()
-      } 
+      }
     });
   };
 
   if (cartItems.length === 0 && savedForLater.length === 0) {
     return (
-      <div className="empty-cart-container">
-        {/* ... empty cart JSX ... */}
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+        <div className="text-center max-w-lg">
+          <div className="text-9xl mb-6 opacity-30">🛒</div>
+          <h2 className="text-3xl font-bold text-white mb-4">Your Cart is Empty</h2>
+          <p className="text-gray-400 text-lg mb-8">Looks like you haven't added any game codes or cards yet.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link to="/products" className="flex items-center gap-2 px-8 py-3 bg-accent hover:bg-accent-hover text-primary font-bold rounded-xl transition-all shadow-lg shadow-accent/20">
+              Start Shopping
+            </Link>
+          </div>
+          <div className="flex justify-center gap-6 mt-12 flex-wrap text-gray-400 text-sm font-medium">
+            <div className="flex items-center gap-2"><FaShieldAlt className="text-green-500" /> Safe & Secure</div>
+            <div className="flex items-center gap-2"><FaTruck className="text-green-500" /> Instant Delivery</div>
+            <div className="flex items-center gap-2"><FaCheckCircle className="text-green-500" /> Refund Policy</div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="cart-container">
-      <div className="cart-header">
-        <h1>{t('shoppingCart')} ({getItemCount()} {getItemCount() === 1 ? t('item') : t('items')})</h1>
-        <Link to="/products" className="continue-shopping">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 min-h-screen">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-6 border-b border-white/10 gap-4">
+        <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+          {t('shoppingCart')} ({getItemCount()} {getItemCount() === 1 ? t('item') : t('items')})
+        </h1>
+        <Link to="/products" className="flex items-center gap-2 text-accent hover:text-white font-semibold px-5 py-2.5 rounded-xl border border-accent/30 hover:bg-accent/10 transition-all">
           <FaArrowLeft /> {t('continueShopping')}
         </Link>
       </div>
 
-      <div className="cart-layout">
+      <div className="flex flex-col lg:flex-row gap-8">
         {/* Left Column - Cart Items */}
-        <div className="cart-items-section">
-          {/* Cart Items */}
-          <div className="cart-items">
+        <div className="flex-grow space-y-6">
+          <div className="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl">
             {cartItems.map(item => {
-              // Safely parse item price
               const itemPrice = Number(item.price) || 0;
               const originalPrice = item.originalPrice ? Number(item.originalPrice) : null;
               const itemTotal = itemPrice * (item.quantity || 1);
-              
+
               return (
-                <div key={item.id} className="cart-item">
-                  <div className="item-checkbox">
-                    <input type="checkbox" defaultChecked />
-                  </div>
-                  
-                  <div className="item-image">
-                    <span className="item-icon">{item.icon || '🎮'}</span>
-                  </div>
-                  
-                  <div className="item-details">
-                    <h3 className="item-title">{item.name || 'Unnamed Item'}</h3>
-                    <div className="item-platform">{item.platform || 'Digital'}</div>
-                    <div className="item-seller">Sold by: DigitalStore</div>
-                    
-                    <div className="item-price-mobile">
-                      <div className="current-price">{safeFormatPrice(itemPrice)}</div>
-                      {originalPrice && originalPrice > itemPrice && (
-                        <div className="original-price">
-                          {safeFormatPrice(originalPrice)}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="item-actions">
-                      <div className="quantity-controls">
-                        <button 
-                          onClick={() => handleQuantityChange(item.id, -1)}
-                          className="quantity-btn"
-                        >
-                          <FaMinus />
-                        </button>
-                        <span className="quantity">{item.quantity || 1}</span>
-                        <button 
-                          onClick={() => handleQuantityChange(item.id, 1)}
-                          className="quantity-btn"
-                        >
-                          <FaPlus />
-                        </button>
-                      </div>
-                      
-                      <div className="action-buttons">
-                        <button 
-                          onClick={() => handleSaveForLater(item)}
-                          className="save-later-btn"
-                        >
-                          <FaHeart /> {t('save')} for later
-                        </button>
-                        <button 
-                          onClick={() => removeFromCart(item.id)}
-                          className="remove-btn"
-                        >
-                          <FaTrash /> Remove
-                        </button>
+                <div key={item.id} className="p-6 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors">
+                  <div className="flex flex-col sm:flex-row gap-6">
+                    {/* Checkbox and Image */}
+                    <div className="flex items-center gap-4">
+                      <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-gray-600 text-accent focus:ring-accent" />
+                      <div className="w-24 h-24 bg-primary/50 rounded-xl border border-white/10 flex items-center justify-center text-4xl shadow-inner">
+                        {item.icon || '🎮'}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="item-price-section">
-                    <div className="price-desktop">
-                      <div className="current-price">{safeFormatPrice(itemPrice)}</div>
-                      {originalPrice && originalPrice > itemPrice && (
-                        <div className="original-price">
-                          {safeFormatPrice(originalPrice)}
+                    {/* Details */}
+                    <div className="flex-grow">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="text-xl font-bold text-white mb-1">{item.name || 'Unnamed Item'}</h3>
+                          <span className="inline-block px-3 py-1 bg-accent/10 text-accent text-xs font-bold rounded-lg border border-accent/20">
+                            {item.platform || 'Digital'}
+                          </span>
                         </div>
-                      )}
-                      <div className="item-total">
-                        Total: {safeFormatPrice(itemTotal)}
+                        <div className="text-right sm:hidden">
+                          <div className="text-lg font-bold text-white">{safeFormatPrice(itemPrice)}</div>
+                          {originalPrice && originalPrice > itemPrice && (
+                            <div className="text-sm text-gray-500 line-through">{safeFormatPrice(originalPrice)}</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-gray-500 mb-4">Sold by: DigitalStore</p>
+
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center bg-primary rounded-lg border border-white/10">
+                            <button onClick={() => handleQuantityChange(item.id, -1)} className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded-l-lg transition-colors"><FaMinus size={12} /></button>
+                            <span className="w-10 text-center font-bold text-white">{item.quantity || 1}</span>
+                            <button onClick={() => handleQuantityChange(item.id, 1)} className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded-r-lg transition-colors"><FaPlus size={12} /></button>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2">
+                            <button onClick={() => handleSaveForLater(item)} className="p-2 text-gray-400 hover:text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Save for later"><FaHeart /></button>
+                            <button onClick={() => removeFromCart(item.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors" title="Remove"><FaTrash /></button>
+                          </div>
+                        </div>
+
+                        {/* Desktop Price */}
+                        <div className="hidden sm:block text-right">
+                          <div className="text-xl font-bold text-white">{safeFormatPrice(itemPrice)}</div>
+                          {originalPrice && originalPrice > itemPrice && (
+                            <div className="text-sm text-gray-500 line-through">{safeFormatPrice(originalPrice)}</div>
+                          )}
+                          <div className="text-sm font-medium text-emerald-400 mt-1">Total: {safeFormatPrice(itemTotal)}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+            {/* Clear Cart */}
+            {cartItems.length > 0 && (
+              <div className="p-4 bg-primary/30 flex justify-end">
+                <button onClick={clearCart} className="flex items-center gap-2 px-4 py-2 text-red-500 hover:text-white hover:bg-red-600 rounded-lg transition-all text-sm font-semibold">
+                  <FaTrash /> Clear Cart
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Clear Cart Button */}
-          {cartItems.length > 0 && (
-            <div className="cart-actions-bottom">
-              <button onClick={clearCart} className="clear-cart-btn">
-                <FaTrash /> Clear Cart
-              </button>
-            </div>
-          )}
-
-          {/* Saved for Later Section */}
+          {/* Saved for Later */}
           {savedForLater.length > 0 && (
-            <div className="saved-for-later">
-              <h3>Saved for Later ({savedForLater.length} items)</h3>
-              <div className="saved-items">
+            <div className="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+              <h3 className="text-xl font-bold text-white mb-4 pb-4 border-b border-white/10">Saved for Later ({savedForLater.length})</h3>
+              <div className="space-y-4">
                 {savedForLater.map(item => {
                   const itemPrice = Number(item.price) || 0;
                   return (
-                    <div key={item.id} className="saved-item">
-                      <div className="saved-item-image">
-                        <span className="item-icon">{item.icon || '🎮'}</span>
+                    <div key={item.id} className="flex items-center gap-4 p-4 bg-primary/30 rounded-xl border border-white/5">
+                      <div className="w-16 h-16 bg-primary/50 rounded-lg flex items-center justify-center text-2xl">
+                        {item.icon || '🎮'}
                       </div>
-                      <div className="saved-item-details">
-                        <h4>{item.name || 'Unnamed Item'}</h4>
-                        <div className="saved-item-platform">{item.platform || 'Digital'}</div>
-                        <div className="saved-item-price">{safeFormatPrice(itemPrice)}</div>
+                      <div className="flex-grow">
+                        <h4 className="font-bold text-white">{item.name}</h4>
+                        <div className="text-sm text-gray-500">{item.platform}</div>
+                        <div className="font-bold text-accent">{safeFormatPrice(itemPrice)}</div>
                       </div>
-                      <div className="saved-item-actions">
-                        <button 
-                          onClick={() => handleMoveToCart(item)}
-                          className="move-to-cart-btn"
-                        >
-                          Move to Cart
-                        </button>
-                        <button 
-                          onClick={() => setSavedForLater(savedForLater.filter(i => i.id !== item.id))}
-                          className="remove-saved-btn"
-                        >
-                          <FaTrash />
-                        </button>
+                      <div className="flex flex-col gap-2">
+                        <button onClick={() => handleMoveToCart(item)} className="px-4 py-2 bg-accent/10 hover:bg-accent text-accent hover:text-primary text-sm font-bold rounded-lg transition-colors">Move to Cart</button>
+                        <button onClick={() => setSavedForLater(savedForLater.filter(i => i.id !== item.id))} className="text-gray-500 hover:text-red-500 text-sm">Remove</button>
                       </div>
                     </div>
                   );
@@ -270,138 +260,105 @@ export default function Cart() {
         </div>
 
         {/* Right Column - Price Details */}
-        <div className="price-details-section">
-          <div className="price-details-card">
-            <h3>{t('priceDetails')}</h3>
-            
-            <div className="price-breakdown">
-              <div className="price-row">
-                <span>{t('total')} ({getItemCount()} {getItemCount() === 1 ? t('item') : t('items')})</span>
-                <span>{safeFormatPrice(getCartTotal())}</span>
+        <div className="lg:w-[400px] flex-shrink-0">
+          <div className="bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sticky top-24">
+            <h3 className="text-xl font-bold text-white mb-6 pb-4 border-b border-dashed border-white/10">{t('priceDetails')}</h3>
+
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between text-gray-300">
+                <span>{t('total')} ({getItemCount()} items)</span>
+                <span className="font-medium text-white">{safeFormatPrice(getCartTotal())}</span>
               </div>
-              
-              <div className="price-row">
+              <div className="flex justify-between text-gray-300">
                 <span>{t('deliveryCharges')}</span>
-                <span className={calculateDelivery() === 0 ? 'free' : ''}>
+                <span className={calculateDelivery() === 0 ? 'text-emerald-400' : 'text-white'}>
                   {calculateDelivery() === 0 ? t('free') : safeFormatPrice(calculateDelivery())}
                 </span>
               </div>
-              
               {appliedCoupon && (
-                <div className="price-row discount-row">
+                <div className="flex justify-between text-emerald-400">
                   <span>{t('discount')} ({appliedCoupon.discount}%)</span>
-                  <span className="discount">-{safeFormatPrice(calculateDiscount())}</span>
+                  <span className="font-bold">-{safeFormatPrice(calculateDiscount())}</span>
                 </div>
               )}
-
-              <div className="price-row total-row">
-                <span>{t('totalAmount')}</span>
-                <span className="total-amount">{safeFormatPrice(grandTotal)}</span>
+              <div className="pt-4 border-t border-white/10 flex justify-between items-center mt-4">
+                <span className="text-lg font-bold text-white">{t('totalAmount')}</span>
+                <span className="text-2xl font-bold text-accent">{safeFormatPrice(grandTotal)}</span>
               </div>
             </div>
 
-            <div className="savings-message">
-              {calculateDiscount() > 0 && (
-                <div className="saving">
-                  You will save {safeFormatPrice(calculateDiscount())} on this order
-                </div>
-              )}
-              {calculateDelivery() === 0 && getCartTotal() < 100 && (
-                <div className="saving">
-                  Add {safeFormatPrice(100 - getCartTotal())} more for FREE delivery
-                </div>
-              )}
-            </div>
+            {/* Savings Message */}
+            {((calculateDiscount() > 0) || (calculateDelivery() === 0 && getCartTotal() < 100)) && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6 text-sm">
+                {calculateDiscount() > 0 && (
+                  <div className="text-emerald-400 font-medium mb-1">
+                    You will save {safeFormatPrice(calculateDiscount())} on this order!
+                  </div>
+                )}
+                {calculateDelivery() === 0 && getCartTotal() < 100 && (
+                  <div className="text-emerald-400">
+                    Add {safeFormatPrice(100 - getCartTotal())} more for FREE delivery
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Coupon Section */}
-            <div className="coupon-section">
-              <div className="coupon-input">
+            <div className="mb-6 pt-6 border-t border-dashed border-white/10">
+              <div className="flex gap-2 mb-3">
                 <input
                   type="text"
                   placeholder={t('enterCouponCode')}
+                  className="flex-grow bg-primary/50 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-accent"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                 />
-                <button 
-                  onClick={handleApplyCoupon}
-                  className="apply-coupon-btn"
-                >
-                  {t('apply')}
-                </button>
+                <button onClick={handleApplyCoupon} className="bg-accent hover:bg-accent-hover text-primary font-bold px-4 py-2.5 rounded-xl transition-colors">{t('apply')}</button>
               </div>
+
               {appliedCoupon && (
-                <div className="applied-coupon">
-                  <span>{t('apply')}: {appliedCoupon.code}</span>
-                  <button 
-                    onClick={() => setAppliedCoupon(null)}
-                    className="remove-coupon"
-                  >
-                    Remove
-                  </button>
+                <div className="flex justify-between items-center p-3 bg-accent/10 border border-accent/20 rounded-xl mb-3">
+                  <span className="text-accent font-bold text-sm">✅ {appliedCoupon.code} applied</span>
+                  <button onClick={() => setAppliedCoupon(null)} className="text-red-400 hover:text-red-300 text-xs underline">Remove</button>
                 </div>
               )}
-              <div className="available-coupons">
-                <p>{t('availableCoupons')}:</p>
-                {coupons.map(coupon => (
-                  <div key={coupon.code} className="coupon-tag">
-                    <span className="coupon-code">{coupon.code}</span>
-                    <span className="coupon-desc">{coupon.discount}% off on min. {safeFormatPrice(coupon.minOrder)}</span>
-                  </div>
-                ))}
+
+              <div>
+                <p className="text-xs text-gray-500 mb-2">{t('availableCoupons')}:</p>
+                <div className="flex flex-wrap gap-2">
+                  {coupons.map(c => (
+                    <div key={c.code} className="px-2 py-1 bg-white/5 border border-white/10 rounded text-xs text-gray-300 hover:bg-white/10 cursor-pointer transition-colors" title={`Min order: ${safeFormatPrice(c.minOrder)}`}>
+                      <span className="text-accent font-bold">{c.code}</span> - {c.discount}% Off
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Checkout Button */}
-            <button 
-              onClick={handleCheckout}
-              className="checkout-btn"
-              disabled={cartItems.length === 0}
-            >
+            <button onClick={handleCheckout} disabled={cartItems.length === 0} className="w-full bg-gradient-to-r from-accent to-yellow-500 hover:from-accent-hover hover:to-yellow-600 text-primary font-bold py-4 rounded-xl shadow-xl shadow-accent/20 transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-lg">
               <FaCreditCard /> {t('placeOrder')}
             </button>
 
-            {/* Security Features */}
-            <div className="security-features">
-              <div className="security-item">
-                <FaShieldAlt />
-                <span>{t('safeSecurePayments')}</span>
-              </div>
-              <div className="security-item">
-                <FaTruck />
-                <span>{t('instantDigitalDelivery')}</span>
-              </div>
-              <div className="security-item">
-                <FaCheckCircle />
-                <span>{t('refundPolicy')}</span>
-              </div>
+            <div className="mt-6 space-y-3 text-xs text-gray-500">
+              <div className="flex items-center gap-2"><FaShieldAlt /> {t('safeSecurePayments')}</div>
+              <div className="flex items-center gap-2"><FaTruck /> {t('instantDigitalDelivery')}</div>
+              <div className="flex items-center gap-2"><FaCheckCircle /> {t('refundPolicy')}</div>
             </div>
+
           </div>
 
-          {/* Recommended Products */}
-          <div className="recommended-products">
-            <h3>Frequently Bought Together</h3>
-            <div className="recommended-list">
-              <div className="recommended-item">
-                <span className="rec-icon">🎧</span>
-                <div className="rec-details">
-                  <span className="rec-name">Gaming Headset</span>
-                  <span className="rec-price">+ $49.99</span>
+          {/* Recommended (Simplified for layout) */}
+          <div className="mt-6 bg-white/5 border border-white/10 rounded-2xl p-6">
+            <h3 className="text-lg font-bold text-white mb-4">Frequently Bought Together</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-primary/30 rounded-lg hover:bg-primary/50 transition-colors cursor-pointer group">
+                <span className="text-2xl">🎧</span>
+                <div>
+                  <div className="text-sm font-medium text-gray-300 group-hover:text-white">Gaming Headset</div>
+                  <div className="text-xs text-accent">+ $49.99</div>
                 </div>
               </div>
-              <div className="recommended-item">
-                <span className="rec-icon">⌨️</span>
-                <div className="rec-details">
-                  <span className="rec-name">Mechanical Keyboard</span>
-                  <span className="rec-price">+ $89.99</span>
-                </div>
-              </div>
-              <div className="recommended-item">
-                <span className="rec-icon">🖱️</span>
-                <div className="rec-details">
-                  <span className="rec-name">Gaming Mouse</span>
-                  <span className="rec-price">+ $39.99</span>
-                </div>
-              </div>
+              {/* Add more usage of map if needed, kept simple */}
             </div>
           </div>
         </div>

@@ -55,16 +55,16 @@ export default function Navbar() {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-primary/95 backdrop-blur-sm border-b border-white/10 shadow-lg text-white">
+    <nav className="sticky top-0 z-[999] w-full bg-primary/95 backdrop-blur-sm border-b border-white/10 shadow-lg text-text">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
 
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group" onClick={closeMobileMenu}>
             <div className="p-2 bg-accent rounded-lg group-hover:bg-accent-hover transition-colors">
-              <FaGamepad className="text-xl text-white" />
+              <FaGamepad className="text-xl text-primary" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            <span className="text-xl font-bold bg-gradient-to-r from-text to-gray-500 bg-clip-text text-transparent">
               Digital Market
             </span>
           </Link>

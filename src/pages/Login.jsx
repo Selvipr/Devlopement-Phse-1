@@ -1,17 +1,24 @@
-// src/pages/Login.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FaGamepad, FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
+import { FaGamepad, FaEnvelope, FaLock, FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { user, signIn, signInWithGoogle } = useAuth(); // Added user to destructure
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // New state
 
   const [rememberMe, setRememberMe] = useState(true);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/home');
+    }
+  }, [user, navigate]);
 
   const updateForm = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,19 +26,20 @@ export default function Login() {
 
   const submitForm = async (e) => {
     e.preventDefault();
+    if (user) return; // Prevent double submit if already logged in
     setError("");
     setLoading(true);
 
     try {
       await signIn(form.email, form.password);
-      // Forced navigation to ensure it doesn't stay on login page
+      // Navigation handled by useEffect, but good to keep here too
       navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
       setError(err.message || "Failed to login. Please check your credentials.");
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only unset loading on error, success unmounts or effect handles it
     }
+    // Remove finally block to prevent setting state on unmounted component if redirect happens fast
   };
 
   return (
@@ -88,13 +96,20 @@ export default function Login() {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
-                  className="appearance-none relative block w-full px-3 py-3 pl-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
+                  className="appearance-none relative block w-full px-3 py-3 pl-10 pr-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
                   placeholder="Password"
                   onChange={updateForm}
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white cursor-pointer"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
               </div>
             </div>
           </div>

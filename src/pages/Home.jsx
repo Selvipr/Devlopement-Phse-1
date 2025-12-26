@@ -55,7 +55,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-primary text-white">
+    <div className="min-h-screen bg-primary text-text">
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 lg:py-32">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary to-primary/50 opacity-90 z-0"></div>
@@ -65,10 +65,10 @@ export default function Home() {
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between">
           <div className="lg:w-1/2 mb-12 lg:mb-0 text-center lg:text-left">
-            <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
+            <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-text">
               {t("instantDigitalGamingCodes")}
             </h1>
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0">
+            <p className="text-xl text-text-muted mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0">
               {t("getInstantAccess") || "Level up your gaming experience with instant delivery on top-ups, gift cards, and subscriptions."}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
