@@ -38,8 +38,8 @@ export default function AdminLayout() {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${location.pathname === item.path
-                                    ? 'bg-accent text-primary font-bold shadow-lg shadow-accent/20'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                ? 'bg-accent text-primary font-bold shadow-lg shadow-accent/20'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             <item.icon />
@@ -68,7 +68,7 @@ export default function AdminLayout() {
                     <div className="flex items-center space-x-4">
                         <div className="text-right">
                             <p className="text-sm font-bold text-white">Admin User</p>
-                            <p className="text-xs text-gray-400">admin@quantix.com</p>
+                            <p className="text-xs text-gray-400">admin@digitalmarket.com</p>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-primary font-bold">
                             A

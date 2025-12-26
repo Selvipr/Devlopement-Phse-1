@@ -18,7 +18,7 @@ export default function Footer() {
               <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent/20 transition-colors">
                 <FaGamepad className="text-2xl text-accent" />
               </div>
-              <span className="text-2xl font-bold text-white tracking-tight">Quantix</span>
+              <span className="text-2xl font-bold text-white tracking-tight">Digital Market</span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-400">
               Your trusted marketplace for instant digital gaming top-ups and gift cards. Fast, secure, and reliable delivery 24/7.
@@ -76,7 +76,7 @@ export default function Footer() {
             <ul className="space-y-6">
               <li className="flex items-start space-x-4 group">
                 <FaEnvelope className="mt-1 text-accent group-hover:text-white transition-colors" />
-                <span className="text-sm">support@quantix.com</span>
+                <span className="text-sm">support@digitalmarket.com</span>
               </li>
               <li className="flex items-start space-x-4 group">
                 <FaPhone className="mt-1 text-accent group-hover:text-white transition-colors" />
@@ -91,9 +91,9 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/5 pt-8 text-center text-sm text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Quantix Labs. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Digital Market Labs. All rights reserved.</p>
           <p className="mt-2 text-xs">
-            Quantix is not affiliated with any game developers. All trademarks belong to their respective owners.
+            Digital Market is not affiliated with any game developers. All trademarks belong to their respective owners.
           </p>
         </div>
       </div>

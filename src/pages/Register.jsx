@@ -71,7 +71,7 @@ export default function Register() {
           </div>
           <h2 className="text-3xl font-extrabold text-white">Create Account</h2>
           <p className="mt-2 text-sm text-gray-400">
-            Join thousands of gamers in the Quantix community
+            Join thousands of gamers in the Digital Market community
           </p>
         </div>
 
