@@ -19,6 +19,10 @@ export default {
         text: {
           DEFAULT: 'var(--color-text)',
           muted: 'var(--color-text-muted)',
+        },
+        accent: {
+          DEFAULT: '#3b82f6', // Blue 500
+          hover: '#2563eb',   // Blue 600
         }
       },
       fontFamily: {
