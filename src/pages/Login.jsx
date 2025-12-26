@@ -2,14 +2,16 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FaGamepad, FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaGamepad, FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [rememberMe, setRememberMe] = useState(true);
 
   const updateForm = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -22,7 +24,8 @@ export default function Login() {
 
     try {
       await signIn(form.email, form.password);
-      navigate("/"); // Redirect to home on success
+      // Forced navigation to ensure it doesn't stay on login page
+      navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
       setError(err.message || "Failed to login. Please check your credentials.");
@@ -102,6 +105,8 @@ export default function Login() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
@@ -120,12 +125,33 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-primary bg-accent hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200 shadow-lg shadow-accent/20 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-black bg-yellow-500 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200 shadow-lg shadow-yellow-500/20 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 w-full flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-transparent text-gray-400">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              onClick={() => signInWithGoogle()}
+              className="w-full flex items-center justify-center px-4 py-3 border border-white/10 rounded-xl shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200"
+            >
+              <FaGoogle className="h-5 w-5 mr-3 text-red-500" />
+              <span>Sign in with Google</span>
+            </button>
+          </div>
+        </div>
 
         <div className="text-center mt-4">
           <p className="text-sm text-gray-400">

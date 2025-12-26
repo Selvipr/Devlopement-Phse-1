@@ -2,11 +2,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FaUserPlus, FaUser, FaEnvelope, FaLock, FaCalendar, FaPhone, FaMapMarkerAlt, FaVenusMars } from "react-icons/fa";
+import { FaUserPlus, FaUser, FaEnvelope, FaLock, FaCalendar, FaPhone, FaMapMarkerAlt, FaVenusMars, FaGoogle } from "react-icons/fa";
 
 export default function Register() {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -239,6 +239,27 @@ export default function Register() {
             {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 w-full flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-transparent text-gray-400">Or sign up with</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              onClick={() => signInWithGoogle()}
+              className="w-full flex items-center justify-center px-4 py-3 border border-white/10 rounded-xl shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200"
+            >
+              <FaGoogle className="h-5 w-5 mr-3 text-red-500" />
+              <span>Sign up with Google</span>
+            </button>
+          </div>
+        </div>
 
         <div className="text-center mt-6">
           <p className="text-sm text-gray-400">

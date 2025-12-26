@@ -41,6 +41,28 @@
   color: var(--color-text-muted);
 }
 
+/* Light mode overrides for common hardcoded classes */
 :root[data-theme="light"] .text-white {
-  color: #0f172a;
+  color: #0f172a !important;
+  /* Force dark text in light mode */
+}
+
+:root[data-theme="light"] .text-gray-400 {
+  color: #64748b !important;
+  /* Make gray text slightly darker for better contrast */
+}
+
+:root[data-theme="light"] .bg-white\/5 {
+  background-color: #f1f5f9 !important;
+  /* Slate 100 for inputs */
+  border-color: #cbd5e1 !important;
+  /* Slate 300 for borders */
+}
+
+:root[data-theme="light"] .border-white\/10 {
+  border-color: #cbd5e1 !important;
+}
+
+:root[data-theme="light"] .border-white\/5 {
+  border-color: #e2e8f0 !important;
 }
