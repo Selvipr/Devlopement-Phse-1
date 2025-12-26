@@ -1,27 +1,84 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 import "./Profile.css";
 
 export default function Profile() {
   const { t } = useLanguage();
+  const { user, profile, refreshProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [user, setUser] = useState({
-    name: "Krishna kumar",
-    email: "krish@gmail.com",
-    phone: "+91 1234567890",
-    address: "123 Main Street,kpc,madurai-14",
-    joinDate: "January 2025",
-    orders: 15,
-    profileImage: null // Start with null for better UX
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [ordersCount, setOrdersCount] = useState(0);
+
+  // Initial state structure matching the form fields
+  const [formData, setFormData] = useState({
+    full_name: "",
+    phone: "",
+    address: "",
   });
 
-  const [formData, setFormData] = useState({ ...user });
-
-  const handleEditToggle = () => {
-    if (isEditing) {
-      setUser(formData);
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || "",
+        phone: profile.phone || "",
+        address: profile.address || "",
+      });
     }
-    setIsEditing(!isEditing);
+  }, [profile]);
+
+  useEffect(() => {
+    if (user) {
+      fetchOrdersCount();
+    }
+  }, [user]);
+
+  const fetchOrdersCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (!error) {
+        setOrdersCount(count || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching orders count:", error);
+    }
+  };
+
+  const handleEditToggle = async () => {
+    if (isEditing) {
+      // Save changes
+      setLoading(true);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            email: user.email,
+            full_name: formData.full_name,
+            phone: formData.phone,
+            address: formData.address,
+            updated_at: new Date(),
+          })
+
+        if (error) throw error;
+
+        await refreshProfile();
+        setIsEditing(false);
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        alert("Error updating profile");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setIsEditing(true);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -31,17 +88,59 @@ export default function Profile() {
     });
   };
 
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData({
-          ...formData,
-          profileImage: event.target.result
-        });
-      };
-      reader.readAsDataURL(e.target.files[0]);
+  const handleImageChange = async (e) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return;
     }
+
+    setUploading(true);
+    const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const publicUrl = data.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          avatar_url: publicUrl,
+          updated_at: new Date()
+        })
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      await refreshProfile();
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      alert("Error uploading avatar. Make sure the 'avatars' bucket exists and is public.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (!user) {
+    return <div className="p-8 text-center text-white">Please log in to view your profile.</div>;
+  }
+
+  // Helper date formatter
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
   };
 
   return (
@@ -56,9 +155,9 @@ export default function Profile() {
           {/* Profile Image Section */}
           <div className="profile-image-section">
             <div className="image-container">
-              {(isEditing ? formData.profileImage : user.profileImage) ? (
+              {profile?.avatar_url ? (
                 <img
-                  src={isEditing ? formData.profileImage : user.profileImage}
+                  src={profile.avatar_url}
                   alt="Profile"
                   className="profile-image"
                   onError={(e) => {
@@ -68,24 +167,25 @@ export default function Profile() {
               ) : (
                 <div className="default-avatar">
                   <span className="avatar-text">
-                    {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || user.email[0].toUpperCase()}
                   </span>
                 </div>
               )}
-              {isEditing && (
-                <div className="image-upload-overlay">
-                  <label htmlFor="profile-upload" className="upload-label">
-                    📷 {t("changePhoto")}
-                  </label>
-                  <input
-                    id="profile-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    style={{ display: 'none' }}
-                  />
-                </div>
-              )}
+
+              <div className="image-upload-overlay">
+                <label htmlFor="profile-upload" className="upload-label" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
+                  {uploading ? '⏳ Uploading...' : `📷 ${t("changePhoto")}`}
+                </label>
+                <input
+                  id="profile-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ display: 'none' }}
+                  disabled={uploading}
+                />
+              </div>
+
             </div>
           </div>
 
@@ -97,8 +197,8 @@ export default function Profile() {
                   <label>{t("name")}</label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="full_name"
+                    value={formData.full_name}
                     onChange={handleInputChange}
                     className="edit-input"
                   />
@@ -108,10 +208,10 @@ export default function Profile() {
                   <label>Email</label>
                   <input
                     type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="edit-input"
+                    value={user.email}
+                    disabled
+                    className="edit-input disabled"
+                    style={{ opacity: 0.7, cursor: 'not-allowed' }}
                   />
                 </div>
 
@@ -123,6 +223,7 @@ export default function Profile() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     className="edit-input"
+                    placeholder="+1 234 567 8900"
                   />
                 </div>
 
@@ -134,6 +235,7 @@ export default function Profile() {
                     onChange={handleInputChange}
                     className="edit-textarea"
                     rows="3"
+                    placeholder="Enter your shipping address"
                   />
                 </div>
               </div>
@@ -141,7 +243,7 @@ export default function Profile() {
               <div className="info-display">
                 <div className="info-item">
                   <span className="info-label">{t("name")}:</span>
-                  <span className="info-value">{user.name}</span>
+                  <span className="info-value">{profile?.full_name || "Not set"}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">Email:</span>
@@ -149,19 +251,19 @@ export default function Profile() {
                 </div>
                 <div className="info-item">
                   <span className="info-label">Phone:</span>
-                  <span className="info-value">{user.phone}</span>
+                  <span className="info-value">{profile?.phone || "Not set"}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">Address:</span>
-                  <span className="info-value">{user.address}</span>
+                  <span className="info-value">{profile?.address || "Not set"}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">{t("memberSince")}:</span>
-                  <span className="info-value">{user.joinDate}</span>
+                  <span className="info-value">{formatDate(user.created_at)}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">{t("totalOrders")}:</span>
-                  <span className="info-value highlight">{user.orders}</span>
+                  <span className="info-value highlight">{ordersCount}</span>
                 </div>
               </div>
             )}
@@ -171,16 +273,22 @@ export default function Profile() {
               <button
                 className={`btn ${isEditing ? 'btn-secondary' : 'btn-primary'}`}
                 onClick={handleEditToggle}
+                disabled={loading}
               >
-                {isEditing ? t("save") : t("editProfile")}
+                {loading ? "Saving..." : (isEditing ? t("save") : t("editProfile"))}
               </button>
               {isEditing && (
                 <button
                   className="btn btn-outline"
                   onClick={() => {
-                    setFormData({ ...user });
+                    setFormData({
+                      full_name: profile?.full_name || "",
+                      phone: profile?.phone || "",
+                      address: profile?.address || "",
+                    });
                     setIsEditing(false);
                   }}
+                  disabled={loading}
                 >
                   {t("cancel")}
                 </button>

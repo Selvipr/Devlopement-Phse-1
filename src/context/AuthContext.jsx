@@ -50,7 +50,16 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        // Force loading to false after 2 seconds to prevent infinite hanging
+        const timeout = setTimeout(() => {
+            console.warn("AuthContext: Timeout - forcing loading false");
+            setLoading(false);
+        }, 2000);
+
+        return () => {
+            subscription.unsubscribe();
+            clearTimeout(timeout);
+        };
     }, []);
 
     const fetchProfile = async (userId) => {
@@ -110,11 +119,19 @@ export const AuthProvider = ({ children }) => {
         signUp,
         signIn,
         signOut,
+        refreshProfile: () => user && fetchProfile(user.id),
     };
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {loading ? (
+                <div className="flex items-center justify-center min-h-screen bg-primary text-white">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+                    <span className="ml-4 text-xl">Loading...</span>
+                </div>
+            ) : (
+                children
+            )}
         </AuthContext.Provider>
     );
 };

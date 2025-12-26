@@ -2,7 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Additional custom styles if needed, but prefer config */
-body {
-  @apply bg-primary text-white font-sans antialiased;
+@layer base {
+  :root {
+    /* Default to Dark Mode variables to ensure visibility if theme attribute is missing */
+    --color-primary: #0f172a;
+    --color-surface: #1e293b;
+    --color-text: #f8fafc;
+    --color-text-muted: #94a3b8;
+  }
+
+  :root[data-theme="light"] {
+    --color-primary: #ffffff;
+    --color-surface: #f1f5f9;
+    --color-text: #0f172a;
+    --color-text-muted: #64748b;
+  }
+
+  :root[data-theme="dark"] {
+    --color-primary: #0f172a;
+    --color-surface: #1e293b;
+    --color-text: #f8fafc;
+    --color-text-muted: #94a3b8;
+  }
+
+  body {
+    @apply bg-primary font-sans antialiased transition-colors duration-200;
+    /* Explicitly set color property to ensure text visibility */
+    color: var(--color-text);
+  }
+}
+
+/* Helper classes */
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.text-gray-300 {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="light"] .text-white {
+  color: #0f172a;
 }
