@@ -1,8 +1,9 @@
 // src/pages/ProductDetail.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { getProductById } from '../lib/supabase';
 import { FaArrowLeft, FaShoppingCart, FaCreditCard, FaCheckCircle, FaStar, FaTruck, FaShieldAlt, FaMinus, FaPlus } from 'react-icons/fa';
 
 export default function ProductDetail() {
@@ -16,28 +17,60 @@ export default function ProductDetail() {
   const [serverId, setServerId] = useState('');
   const [errors, setErrors] = useState({});
 
-  // Get product from location state or reconstruct from id
-  let product = location.state?.product;
+  // State for fetched product if not passed via state
+  const [fetchedProduct, setFetchedProduct] = useState(null);
+  const [loading, setLoading] = useState(!location.state?.product);
+  const [error, setError] = useState(null);
 
-  // Manual reconstruction logic if state is missing (simplified for brevity, main logic in Products.jsx)
-  if (!product && id) {
-    // Basic fallback to avoid crash if accessed directly without state, normally we'd fetch API
-    product = {
-      id: id,
-      name: "Loading Product...",
-      category: "Loading",
-      discountedPrice: "$0.00",
-      originalPrice: "$0.00",
-      rating: "5.0",
-      platform: "Loading",
-      icon: "⌛"
-    };
+  // Get product from location state or fetched state
+  let product = location.state?.product || fetchedProduct;
+
+  useEffect(() => {
+    if (!product && id) {
+      fetchProduct(id);
+    } else {
+      setLoading(false);
+    }
+  }, [id, product]);
+
+  const fetchProduct = async (productId) => {
+    try {
+      setLoading(true);
+      const data = await getProductById(productId);
+
+      // Map DB fields to UI expected fields
+      const mappedProduct = {
+        ...data,
+        discountedPrice: data.price,
+        originalPrice: data.original_price,
+        discount: data.discount_label || data.discount,
+        icon: data.image_url || data.brands?.icon || '📦', // Fallback icon
+        color: data.brands?.color,
+        delivery: data.delivery_time,
+        popular: data.is_popular
+      };
+
+      setFetchedProduct(mappedProduct);
+    } catch (err) {
+      console.error("Error fetching product:", err);
+      setError("Product not found");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-primary text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+      </div>
+    );
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-primary text-white">
-        <h2 className="text-2xl font-bold mb-4">Product not found</h2>
+        <h2 className="text-2xl font-bold mb-4">{error || "Product not found"}</h2>
         <button onClick={() => navigate('/products')} className="px-6 py-3 bg-accent text-primary font-bold rounded-xl hover:bg-accent-hover transition-colors">
           {t('backToCategories')}
         </button>
@@ -47,6 +80,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     if (product.category === 'Game Top-up' || product.platform === 'Free Fire' || product.platform === 'PUBG Mobile') {
+      // ... (existing validation logic)
       const newErrors = {};
       if (!playerId) newErrors.playerId = t('playerIdRequired') || 'Player ID is required';
       if (product.platform === 'Free Fire' && !playerId) newErrors.playerId = 'Player ID is required';
@@ -57,15 +91,20 @@ export default function ProductDetail() {
       }
     }
 
-    // Parse prices handling string format
+    // Parse prices handling string format (if coming from legacy state) or number (from DB)
     const priceVal = typeof product.discountedPrice === 'string'
       ? parseFloat(product.discountedPrice.replace('$', ''))
       : product.discountedPrice;
+
+    const originalVal = typeof product.originalPrice === 'string'
+      ? parseFloat(product.originalPrice.replace('$', ''))
+      : product.originalPrice;
 
     const cartProduct = {
       ...product,
       quantity: quantity,
       price: priceVal,
+      originalPrice: originalVal,
       playerId,
       serverId
     };
@@ -79,10 +118,15 @@ export default function ProductDetail() {
       ? parseFloat(product.discountedPrice.replace('$', ''))
       : product.discountedPrice;
 
+    const originalVal = typeof product.originalPrice === 'string'
+      ? parseFloat(product.originalPrice.replace('$', ''))
+      : product.originalPrice;
+
     const buyProduct = {
       ...product,
       quantity: quantity,
-      price: priceVal
+      price: priceVal,
+      originalPrice: originalVal
     };
     navigate('/checkout', { state: { buyNow: true, product: buyProduct } });
   };

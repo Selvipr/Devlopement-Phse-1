@@ -20,6 +20,7 @@ import Login from './pages/Login';
 import Cart from './pages/Cart';
 import Profile from './pages/Profile';
 import Checkout from './pages/Checkout';
+import UpdatePassword from './pages/UpdatePassword';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
@@ -35,6 +36,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 
 // Layout for public/user pages (includes Navbar & Footer)
 const MainLayout = () => {
+  console.log("MainLayout Rendering");
   return (
     <div className="App flex flex-col min-h-screen">
       <Navbar />
@@ -73,6 +75,7 @@ function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/update-password" element={<UpdatePassword />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/refund-policy" element={<RefundPolicy />} />

@@ -1,51 +1,35 @@
 // src/pages/Home.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
-import { FaGamepad, FaPlaystation, FaXbox, FaSpotify, FaSteam, FaGift, FaArrowRight, FaShieldAlt, FaBolt, FaHeadset } from "react-icons/fa";
+import { getBrands } from "../lib/supabase";
+import {
+  FaGamepad, FaPlaystation, FaXbox, FaSpotify, FaSteam, FaGift,
+  FaArrowRight, FaMousePointer, FaCreditCard, FaCheckCircle,
+  FaShieldAlt, FaBolt, FaHeadset
+} from "react-icons/fa";
 
 export default function Home() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [featuredBrands, setFeaturedBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Steam Wallet",
-      price: "$50",
-      discount: "10% OFF",
-      icon: FaSteam,
-      color: "text-blue-400",
-      category: "Gaming"
-    },
-    {
-      id: 2,
-      name: "PlayStation Plus",
-      price: "$25",
-      discount: "5% OFF",
-      icon: FaPlaystation,
-      color: "text-blue-600",
-      category: "Gaming"
-    },
-    {
-      id: 3,
-      name: "Xbox Game Pass",
-      price: "$30",
-      discount: "15% OFF",
-      icon: FaXbox,
-      color: "text-green-500",
-      category: "Gaming"
-    },
-    {
-      id: 4,
-      name: "Spotify Premium",
-      price: "$12",
-      discount: "20% OFF",
-      icon: FaSpotify,
-      color: "text-green-400",
-      category: "Entertainment"
+  useEffect(() => {
+    fetchFeatured();
+  }, []);
+
+  const fetchFeatured = async () => {
+    try {
+      const brands = await getBrands();
+      // Filter or slice for featured. getBrands orders by is_featured desc
+      setFeaturedBrands(brands.slice(0, 4));
+    } catch (err) {
+      console.error("Failed to fetch featured brands", err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const stats = [
     { number: "50K+", label: t("happyCustomers") },
@@ -144,35 +128,42 @@ export default function Home() {
             <p className="mt-4 text-gray-400">{t("mostPopularGamingCodes")}</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredProducts.map((product) => (
-              <div key={product.id} className="group relative bg-surface border border-white/5 rounded-2xl overflow-hidden hover:border-accent/50 transition-all duration-300 hover:shadow-2xl hover:shadow-accent/10">
-                <div className="absolute top-4 left-4 z-10">
-                  <span className="px-3 py-1 bg-accent/90 text-primary text-xs font-bold rounded-full backdrop-blur-sm shadow-lg">
-                    {product.discount}
-                  </span>
-                </div>
+          {loading ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredBrands.map((product) => (
+                <div key={product.id} className="group relative bg-surface border border-white/5 rounded-2xl overflow-hidden hover:border-accent/50 transition-all duration-300 hover:shadow-2xl hover:shadow-accent/10">
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="px-3 py-1 bg-accent/90 text-primary text-xs font-bold rounded-full backdrop-blur-sm shadow-lg">
+                      Featured
+                    </span>
+                  </div>
 
-                <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-b from-white/5 to-transparent h-48 group-hover:scale-105 transition-transform duration-500">
-                  <product.icon className={`text-6xl ${product.color} drop-shadow-2xl`} />
-                </div>
+                  <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-b from-white/5 to-transparent h-48 group-hover:scale-105 transition-transform duration-500">
+                    {/* Using Emoji from DB as icon */}
+                    <span className="text-7xl drop-shadow-2xl">{product.icon}</span>
+                  </div>
 
-                <div className="p-6">
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-2">{product.category}</div>
-                  <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
-                  <div className="flex items-center justify-between mt-4">
-                    <span className="text-2xl font-bold text-accent">{product.price}</span>
-                    <button
-                      onClick={() => navigate(`/product/${product.id}`)}
-                      className="p-3 bg-white/5 rounded-xl text-gray-300 hover:bg-accent hover:text-primary transition-colors"
-                    >
-                      <FaArrowRight />
-                    </button>
+                  <div className="p-6">
+                    <div className="text-xs font-medium text-gray-500 uppercase mb-2">{product.platform}</div>
+                    <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
+                    <div className="flex items-center justify-between mt-4">
+                      <span className="text-sm font-bold text-gray-400">{product.product_count || 0} Products</span>
+                      <button
+                        onClick={() => navigate(`/products`)} // Navigate to Products page to select it
+                        className="p-3 bg-white/5 rounded-xl text-gray-300 hover:bg-accent hover:text-primary transition-colors"
+                      >
+                        <FaArrowRight />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <button onClick={() => navigate("/products")} className="px-8 py-3 border border-white/20 rounded-xl text-white hover:bg-white/10 transition-colors font-medium">
@@ -197,7 +188,7 @@ export default function Home() {
               { icon: FaMousePointer, title: t("chooseYourCode") || "Select Product", desc: t("selectFromVarious") || "Choose from our wide range of games and gift cards." },
               { icon: FaCreditCard, title: t("completePayment") || "Make Payment", desc: t("securePaymentOptions") || "Pay securely using your preferred payment method." },
               { icon: FaCheckCircle, title: t("instantDelivery") || "Receive Code", desc: t("receiveCodeInstantly") || "Get your digital code instantly via email." }
-            ].map((step, idx) => ( // Use simplified mock icons for map simplicity in this view block, actual icons imported below
+            ].map((step, idx) => (
               <div key={idx} className="relative p-8 rounded-3xl bg-surface/50 border border-white/5 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300">
                 <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-accent to-yellow-500 flex items-center justify-center text-primary text-2xl font-bold shadow-lg shadow-accent/20">
                   {idx + 1}
@@ -212,7 +203,3 @@ export default function Home() {
     </div>
   );
 }
-
-// Helper components for icons to restart mapping issue
-function FaMousePointer(props) { return <FaGamepad {...props} />; } // Placeholder mapping
-import { FaCreditCard, FaCheckCircle, FaMousePointer as FaMouseSelect } from "react-icons/fa"; // Re-import correct ones

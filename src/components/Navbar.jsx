@@ -219,8 +219,8 @@ export default function Navbar() {
                     <div className="border-t border-white/10 pt-1">
                       <button
                         className="flex w-full items-center px-4 py-2 text-sm text-red-400 hover:bg-white/5 hover:text-red-300"
-                        onClick={() => {
-                          signOut();
+                        onClick={async () => {
+                          await signOut();
                           setShowProfileMenu(false);
                           navigate('/login');
                         }}
@@ -309,7 +309,7 @@ export default function Navbar() {
                     <div className="text-sm text-gray-400">{user.email}</div>
                   </div>
                 </div>
-                <button onClick={() => { signOut(); closeMobileMenu(); }} className="w-full flex items-center px-3 py-2 text-red-400 hover:bg-white/5 rounded-md">
+                <button onClick={async () => { await signOut(); closeMobileMenu(); navigate('/login'); }} className="w-full flex items-center px-3 py-2 text-red-400 hover:bg-white/5 rounded-md">
                   <FaSignOutAlt className="mr-3" /> {t('logout')}
                 </button>
               </div>

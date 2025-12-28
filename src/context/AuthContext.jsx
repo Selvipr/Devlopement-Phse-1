@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(session?.user ?? null);
                 if (session?.user) {
                     console.log("AuthContext: fetching profile");
-                    fetchProfile(session.user.id);
+                    fetchProfile(session.user);
                 } else {
                     console.log("AuthContext: no session, setting loading false");
                     setLoading(false);
@@ -43,7 +43,9 @@ export const AuthProvider = ({ children }) => {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
-                await fetchProfile(session.user.id);
+                console.log("AuthContext: fetching profile for", session.user.id);
+                // Force a refresh of the profile to get the latest role
+                await fetchProfile(session.user);
             } else {
                 setProfile(null);
             }
@@ -62,21 +64,42 @@ export const AuthProvider = ({ children }) => {
         };
     }, []);
 
-    const fetchProfile = async (userId) => {
+    const fetchProfile = async (user) => {
+        if (!user) return;
         try {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', userId)
+                .eq('id', user.id)
                 .single();
 
             if (error) {
-                console.warn('Error fetching profile:', error);
+                console.warn('Profile not found (fetching error), attempting to create fallback...', error);
+
+                // Fallback: Create or upsert profile if it doesn't exist
+                // This handles cases where the DB trigger might have failed or been too slow
+                const { data: newProfile, error: createError } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        id: user.id,
+                        email: user.email,
+                        full_name: user.user_metadata?.full_name,
+                        avatar_url: user.user_metadata?.avatar_url,
+                    }, { onConflict: 'id' })
+                    .select()
+                    .single();
+
+                if (createError) {
+                    console.error('Error creating profile fallback:', createError);
+                } else {
+                    console.log('Profile created via fallback:', newProfile);
+                    setProfile(newProfile);
+                }
             } else {
                 setProfile(data);
             }
         } catch (error) {
-            console.error('Error fetching profile:', error);
+            console.error('Error in fetchProfile logic:', error);
         } finally {
             setLoading(false);
         }
@@ -115,11 +138,35 @@ export const AuthProvider = ({ children }) => {
     };
 
     const signOut = async () => {
-        const { error } = await supabase.auth.signOut();
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error("Error signing out:", error);
+            }
+        } catch (error) {
+            console.error("Unexpected error during execution of signOut:", error);
+        } finally {
+            // Always clear local state
+            setUser(null);
+            setSession(null);
+            setProfile(null);
+        }
+    };
+
+    const resetPassword = async (email) => {
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/update-password`,
+        });
         if (error) throw error;
-        setUser(null);
-        setSession(null);
-        setProfile(null);
+        return data;
+    };
+
+    const updatePassword = async (newPassword) => {
+        const { data, error } = await supabase.auth.updateUser({
+            password: newPassword
+        });
+        if (error) throw error;
+        return data;
     };
 
     const value = {
@@ -131,7 +178,9 @@ export const AuthProvider = ({ children }) => {
         signIn,
         signInWithGoogle,
         signOut,
-        refreshProfile: () => user && fetchProfile(user.id),
+        resetPassword,
+        updatePassword,
+        refreshProfile: () => user && fetchProfile(user),
     };
 
     return (

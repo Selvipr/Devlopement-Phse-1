@@ -5,9 +5,31 @@ import { FaTachometerAlt, FaBox, FaClipboardList, FaUsers, FaSignOutAlt, FaGamep
 import { useAuth } from '../../context/AuthContext';
 
 export default function AdminLayout() {
-    const { signOut } = useAuth();
+    const { user, profile, loading, signOut } = useAuth(); // Added profile, user, loading
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Protect Admin Route
+    React.useEffect(() => {
+        if (!loading) {
+            console.log("AdminLayout Check:", { user, profile });
+            if (!user) {
+                navigate('/login');
+                return;
+            }
+
+            // Check if profile is loaded and has admin role
+            if (profile) {
+                console.log("Current Profile Role:", profile.role);
+                if (profile.role !== 'admin') {
+                    alert(`Access Denied: Role is '${profile.role}'. Admins only.`);
+                    navigate('/');
+                }
+            } else {
+                console.warn("Profile is null in AdminLayout (but user exists)");
+            }
+        }
+    }, [user, profile, loading, navigate]);
 
     const menuItems = [
         { path: '/admin', icon: FaTachometerAlt, label: 'Dashboard' },
@@ -20,6 +42,8 @@ export default function AdminLayout() {
         await signOut();
         navigate('/login');
     };
+
+    if (loading) return <div className="text-white p-10">Loading Admin Panel...</div>;
 
     return (
         <div className="flex h-screen bg-primary-dark">

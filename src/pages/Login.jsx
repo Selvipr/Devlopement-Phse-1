@@ -5,11 +5,13 @@ import { FaGamepad, FaEnvelope, FaLock, FaGoogle, FaEye, FaEyeSlash } from 'reac
 
 export default function Login() {
   const navigate = useNavigate();
-  const { user, signIn, signInWithGoogle } = useAuth(); // Added user to destructure
+  const { user, signIn, signInWithGoogle, resetPassword } = useAuth(); // Added resetPassword
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // New state
+  const [successMessage, setSuccessMessage] = useState(""); // For reset email sent
+  const [showPassword, setShowPassword] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false); // Toggle state
 
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -24,6 +26,29 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMessage("");
+    setLoading(true);
+
+    if (!form.email) {
+      setError("Please enter your email address.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await resetPassword(form.email);
+      setSuccessMessage("Password reset link sent! Check your email.");
+    } catch (err) {
+      console.error("Reset password error:", err);
+      setError(err.message || "Failed to send reset link.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const submitForm = async (e) => {
     e.preventDefault();
     if (user) return; // Prevent double submit if already logged in
@@ -32,14 +57,13 @@ export default function Login() {
 
     try {
       await signIn(form.email, form.password);
-      // Navigation handled by useEffect, but good to keep here too
+      // Navigation handled by useEffect
       navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
       setError(err.message || "Failed to login. Please check your credentials.");
-      setLoading(false); // Only unset loading on error, success unmounts or effect handles it
+      setLoading(false);
     }
-    // Remove finally block to prevent setting state on unmounted component if redirect happens fast
   };
 
   return (
@@ -55,9 +79,13 @@ export default function Login() {
           <div className="mx-auto h-16 w-16 bg-accent rounded-full flex items-center justify-center text-primary text-3xl mb-4 shadow-lg shadow-accent/20">
             <FaGamepad />
           </div>
-          <h2 className="text-3xl font-extrabold text-white">Welcome Back</h2>
+          <h2 className="text-3xl font-extrabold text-white">
+            {isForgotPassword ? "Reset Password" : "Welcome Back"}
+          </h2>
           <p className="mt-2 text-sm text-gray-400">
-            Sign in to access your gaming top-ups
+            {isForgotPassword
+              ? "Enter your email to receive a password reset link"
+              : "Sign in to access your gaming top-ups"}
           </p>
         </div>
 
@@ -67,115 +95,189 @@ export default function Login() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={submitForm}>
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="email_address" className="sr-only">Email address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaEnvelope className="text-gray-400" />
+        {successMessage && (
+          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg text-sm text-center">
+            {successMessage}
+          </div>
+        )}
+
+        {!isForgotPassword ? (
+          /* LOGIN FORM */
+          <form className="mt-8 space-y-6" onSubmit={submitForm}>
+            <div className="rounded-md shadow-sm space-y-4">
+              <div>
+                <label htmlFor="email_address" className="sr-only">Email address</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaEnvelope className="text-gray-400" />
+                  </div>
+                  <input
+                    id="email_address"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    className="appearance-none relative block w-full px-3 py-3 pl-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
+                    placeholder="Email address"
+                    onChange={updateForm}
+                  />
                 </div>
-                <input
-                  id="email_address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none relative block w-full px-3 py-3 pl-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
-                  placeholder="Email address"
-                  onChange={updateForm}
-                />
+              </div>
+              <div>
+                <label htmlFor="password" className="sr-only">Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaLock className="text-gray-400" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    className="appearance-none relative block w-full px-3 py-3 pl-10 pr-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
+                    placeholder="Password"
+                    onChange={updateForm}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white cursor-pointer"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
               </div>
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="text-gray-400" />
-                </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
                 <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none relative block w-full px-3 py-3 pl-10 pr-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
-                  placeholder="Password"
-                  onChange={updateForm}
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded"
                 />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
+                  Remember me
+                </label>
+              </div>
+
+              <div className="text-sm">
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white cursor-pointer"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setIsForgotPassword(true)}
+                  className="font-medium text-accent hover:text-accent-hover transition-colors bg-transparent border-none cursor-pointer"
                 >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  Forgot password?
                 </button>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
-                Remember me
-              </label>
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-black bg-yellow-500 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200 shadow-lg shadow-yellow-500/20 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+              >
+                {loading ? "Signing in..." : "Sign in"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          /* FORGOT PASSWORD FORM */
+          <form className="mt-8 space-y-6" onSubmit={handleForgotPassword}>
+            <div className="rounded-md shadow-sm space-y-4">
+              <div>
+                <label htmlFor="reset_email" className="sr-only">Email address</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaEnvelope className="text-gray-400" />
+                  </div>
+                  <input
+                    id="reset_email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    className="appearance-none relative block w-full px-3 py-3 pl-10 border border-white/10 placeholder-gray-500 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm transition-colors"
+                    placeholder="Enter your email"
+                    value={form.email}
+                    onChange={updateForm}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="text-sm">
-              <a href="#" className="font-medium text-accent hover:text-accent-hover transition-colors">
-                Forgot password?
-              </a>
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-black bg-accent hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200 shadow-lg shadow-accent/20 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+              >
+                {loading ? "Sending Link..." : "Send Reset Link"}
+              </button>
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-black bg-yellow-500 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200 shadow-lg shadow-yellow-500/20 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 w-full flex items-center">
-              <div className="w-full border-t border-white/10"></div>
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={() => setIsForgotPassword(false)}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+              >
+                Back to Sign In
+              </button>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-transparent text-gray-400">Or continue with</span>
-            </div>
-          </div>
+          </form>
+        )}
 
+        {!isForgotPassword && (
           <div className="mt-6">
-            <button
-              onClick={() => signInWithGoogle()}
-              className="w-full flex items-center justify-center px-4 py-3 border border-white/10 rounded-xl shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200"
-            >
-              <FaGoogle className="h-5 w-5 mr-3 text-red-500" />
-              <span>Sign in with Google</span>
-            </button>
-          </div>
-        </div>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 w-full flex items-center">
+                <div className="w-full border-t border-white/10"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-transparent text-gray-400">Or continue with</span>
+              </div>
+            </div>
 
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-400">
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-accent hover:text-accent-hover transition-colors">
-              Sign up for free
-            </Link>
-          </p>
-        </div>
+            <div className="mt-6">
+              <button
+                disabled={loading}
+                onClick={async () => {
+                  setLoading(true);
+                  setError("");
+                  try {
+                    const { error } = await signInWithGoogle();
+                    if (error) throw error;
+                  } catch (err) {
+                    console.error("Google Login error:", err);
+                    setError(err.message || "Failed to sign in with Google.");
+                    setLoading(false);
+                  }
+                }}
+                className={`w-full flex items-center justify-center px-4 py-3 border border-white/10 rounded-xl shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+              >
+                <FaGoogle className="h-5 w-5 mr-3 text-red-500" />
+                <span>{loading ? "Signing in..." : "Sign in with Google"}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isForgotPassword && (
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-400">
+              Don't have an account?{' '}
+              <Link to="/register" className="font-medium text-accent hover:text-accent-hover transition-colors">
+                Sign up for free
+              </Link>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

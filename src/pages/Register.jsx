@@ -252,11 +252,23 @@ export default function Register() {
 
           <div className="mt-6">
             <button
-              onClick={() => signInWithGoogle()}
-              className="w-full flex items-center justify-center px-4 py-3 border border-white/10 rounded-xl shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200"
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                setError("");
+                try {
+                  const { error } = await signInWithGoogle();
+                  if (error) throw error;
+                } catch (err) {
+                  console.error("Google Login error:", err);
+                  setError(err.message || "Failed to sign up with Google.");
+                  setLoading(false);
+                }
+              }}
+              className={`w-full flex items-center justify-center px-4 py-3 border border-white/10 rounded-xl shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all duration-200 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
             >
               <FaGoogle className="h-5 w-5 mr-3 text-red-500" />
-              <span>Sign up with Google</span>
+              <span>{loading ? "Signing up..." : "Sign up with Google"}</span>
             </button>
           </div>
         </div>

@@ -37,6 +37,8 @@ export default function Orders() {
       return;
     }
 
+    let isMounted = true;
+
     try {
       setLoading(true);
       setError(null);
@@ -56,38 +58,60 @@ export default function Orders() {
               image_url
             )
           )
-          )
         `, { count: 'exact' })
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .eq('user_id', user.id);
 
-      // Apply Search if exists
+      // Apply Search logic
       if (searchQuery) {
-        // Only search numeric fields if query is a number to avoid DB errors
         if (!isNaN(searchQuery)) {
           query = query.or(`id.eq.${searchQuery},total_amount.eq.${searchQuery}`);
         } else {
-          // If strictly text, maybe search status? or just return empty/nothing if we only support ID search
-          // For now, let's search status or payment_status if it matches
           query = query.or(`status.ilike.%${searchQuery}%,payment_status.ilike.%${searchQuery}%`);
         }
       }
+
+      // Apply Tab filters
+      if (activeTab === 'cancelled') {
+        query = query.eq('status', 'cancelled');
+      } else if (activeTab === 'not yet shipped') {
+        query = query.in('status', ['pending', 'processing']);
+      } else if (activeTab === 'buy again') {
+        query = query.eq('status', 'completed');
+      }
+
+      // Apply ordering and pagination
+      query = query
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       const { data, count, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
 
-      setOrders(data || []);
-      setTotalCount(count || 0);
+      if (isMounted) {
+        setOrders(data || []);
+        setTotalCount(count || 0);
+      }
 
     } catch (err) {
       console.error('Error fetching orders:', err);
-      setError(err.message);
+      if (isMounted) {
+        setError(err.message || 'Failed to load orders. Please try again.');
+        // If it's a specific "query.or is not a function" error, it implies Mock Client usage or bad version
+        if (err.message && err.message.includes('not a function')) {
+          setError('System Error: Database client initialization failed. Please check configuration.');
+        }
+      }
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
-  }, [user, page, searchQuery]); // Add searchQuery to dependencies
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, page, searchQuery, activeTab]);
 
   useEffect(() => {
     fetchOrders();
@@ -200,7 +224,7 @@ export default function Orders() {
               {['Orders', 'Buy Again', 'Not Yet Shipped', 'Cancelled'].map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab.toLowerCase())}
+                  onClick={() => { setActiveTab(tab.toLowerCase()); setPage(1); }}
                   className={`
                     whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors
                     ${activeTab === tab.toLowerCase()
